@@ -1,0 +1,74 @@
+{
+    "cimetiere": [],
+    "troncon_de_route": [
+        [
+            "nature",
+            "Chemin"
+        ],
+        [
+            "importance",
+            "2"
+        ],
+        [
+            "etat_de_l_objet",
+            "En construction"
+        ],
+        [
+            "etat_de_l_objet",
+            "En projet"
+        ],
+        [
+            "nature",
+            "Bac ou liaison maritime"
+        ],
+        [
+            "importance",
+            "1"
+        ],
+        [
+            "importance",
+            "3"
+        ],
+        [
+            "nature",
+            "NULL"
+        ],
+        [
+            "etat_de_l_objet",
+            "En service"
+        ],
+        [
+            "nature",
+            "Escalier"
+        ],
+        [
+            "nature",
+            "Rond-point"
+        ],
+        [
+            "nature",
+            "Route empierrée"
+        ],
+        [
+            "nature",
+            "Route à 1 chaussée"
+        ]
+    ],
+    "construction_ponctuelle": [],
+    "equipement_de_transport": [
+        [
+            "nature_detaillee",
+            "Aire de camping-cars"
+        ],
+        [
+            "nature_detaillee",
+            "Aire de covoiturage"
+        ]
+    ],
+    "reservoir": [
+        [
+            "etat_de_l_objet",
+            "En projet"
+        ]
+    ]
+}
