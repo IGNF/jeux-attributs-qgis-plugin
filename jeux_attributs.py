@@ -21,35 +21,32 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
+from PyQt5.QtCore import QObject, QEvent, QTimer
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QListWidgetItem, QComboBox, QGridLayout, QPushButton, QTextEdit, QWidget, \
-    QMessageBox, QVBoxLayout, QFileDialog, QListView
+from PyQt5.QtWidgets import QDialog, QListWidgetItem, QPushButton, QFileDialog, QListView
 from PyQt5.uic import loadUi
 import json
 
-
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
-# from .jeux_attributs_dialog import JeuxAttributsDialog
-import os.path
 
+SEPARATION_TOOLTIP = "\t\U0001F846\t"
+
+import os.path
+from .layout_fluide import *
 
 class FiltreClicDroit(QObject):
     def __init__(self, class_parent):
         super().__init__()
         self.class_parent = class_parent
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self,obj,event):
         if event.type() == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
-            # QMessageBox.information(None, "Clic droit", f"Clic droit sur {obj.text()} 👇")
-
             self.class_parent.show_choix_icon(obj)
             return True  # on consomme l’événement (empêche le clic normal)
         return False
 
-
-class JeuxAttributs:
+class JeuxAttributs():
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -61,16 +58,22 @@ class JeuxAttributs:
         :type iface: QgsInterface
         """
         # Save reference to the QGIS interface
+        self.dlg_choix_icon = None
+        self.clicked_button = None
+        self.datajson = None
         self.dlg = None
         self.iface = iface
         self.layer = None
-        self.layout = None
+        # self.layout = None
         self.dico_layer_attrval = {}
         self.liste_filtres = []
         self.model = None
         self.pathiconbtnclicked = None
-        self.pathjson = os.path.join(os.path.dirname(__file__), "config_btn.json")
-        self.pathicon = os.path.join(os.path.dirname(__file__), "icons", "config.png")
+        self.pathjson = os.path.join(os.path.dirname(__file__),"config", "config_btn.json")
+        self.pathicon_config = os.path.join(os.path.dirname(__file__), "icons", "config.png")
+        self.path_repicon_btn = os.path.join(os.path.dirname(__file__),"config", "icons_btn")
+
+        self.layout_boutons = None
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -79,27 +82,29 @@ class JeuxAttributs:
 
     def show_choix_icon(self,btn):
         self.clicked_button = btn
+        # recuperation des infos du boutons cliqué grace au tooltip qui contient : sstype, valeur
+        tooltip = self.clicked_button.toolTip()
+        sstype, valeur = tooltip.split(SEPARATION_TOOLTIP)
+
         self.dlg_choix_icon = QDialog()
         loadUi(os.path.join(os.path.dirname(__file__), "choix_icon.ui"), self.dlg_choix_icon)
+        self.dlg_choix_icon.setWindowTitle("Paramétrage des boutons et des actions associés")
         self.dlg_choix_icon.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
         self.init_listview_icones()
         self.dlg_choix_icon.lineEditNomBtn.setText(self.clicked_button.text())
+
+        sstype_str = f"<span style='color: red'><b>{sstype}</b></span>"
+        self.dlg_choix_icon.label_ss_type.setText(sstype_str)
+        valeur_str = f"<span style='color: red'><b>{valeur}</b></span>"
+        self.dlg_choix_icon.label_valeur.setText(valeur_str)
+        self.dlg_choix_icon.label_fleche.setText(SEPARATION_TOOLTIP)
+
         self.dlg_choix_icon.radioButtonText.setChecked(True)
         self.dlg_choix_icon.labelAvertissement.setText("")
         self.dlg_choix_icon.show()
-        # fichier, _ = QFileDialog.getOpenFileName(
-        #     None,
-        #     "Sélectionner une icône",
-        #     os.path.join(os.path.dirname(__file__), "icons_btn"),
-        #     "Images (*.png)"
-        # )
-        # # TODO definir des property pour chaques btn crées pour sauvegarder ici l'icon associé
-        # obj.setIcon(QIcon(fichier))
-        # self.dlg_choix_icon.pushButtonOk.clicked.connect(self.dlg_choix_icon.close)
         self.dlg_choix_icon.pushButtonOk.clicked.connect(self.valide_config_btn)
 
     def valide_config_btn(self):
-        print(self.pathiconbtnclicked)
         if self.dlg_choix_icon.radioButtonText.isChecked():
             if self.dlg_choix_icon.lineEditNomBtn.text() == "":
                 self.dlg_choix_icon.labelAvertissement.setText("<span style='color: red'><b>Le nom du bouton est vide</b></span>")
@@ -109,9 +114,9 @@ class JeuxAttributs:
             self.clicked_button.adjustSize()
 
         elif self.dlg_choix_icon.radioButtonIcon.isChecked():
-            if self.pathiconbtnclicked == None:
+            if self.pathiconbtnclicked is None:
                 self.dlg_choix_icon.labelAvertissement.setText(
-                    "<span style='color: red'><b>Aucune icône est sélectionnée</b></span>")
+                    "<span style='color: red'><b>Aucune icône n'est sélectionnée</b></span>")
                 return
             self.clicked_button.setText("")
             self.clicked_button.setIcon(QIcon(self.pathiconbtnclicked))
@@ -119,15 +124,13 @@ class JeuxAttributs:
         self.dlg_choix_icon.close()
 
     def init_listview_icones(self):
-        path_repicon = os.path.join(os.path.dirname(__file__), "icons_btn")
-        """Charge les images PNG du dossier dans la QListView."""
         self.model = QStandardItemModel()
         self.dlg_choix_icon.listViewIcone.setModel(self.model)
         self.dlg_choix_icon.listViewIcone.setViewMode(QListView.IconMode)
         self.dlg_choix_icon.listViewIcone.setSelectionMode(QListView.SingleSelection)
-        for filename in os.listdir(path_repicon):
+        for filename in os.listdir(self.path_repicon_btn):
             if filename.lower().endswith(".ico"):
-                path = os.path.join(path_repicon, filename)
+                path = os.path.join(self.path_repicon_btn, filename)
                 # pixmap = QPixmap(path).scaled(30, 30)
                 pixmap = QPixmap(path)
                 icon = QIcon(pixmap)
@@ -161,12 +164,9 @@ class JeuxAttributs:
         # pk faire ce test !!
         if champ == "":
             return
-        list_att = []
-        if self.layer.name() in self.dico_layer_attrval:
-            for tmp, attr in self.dico_layer_attrval[self.layer.name()]:
-                list_att.append(attr)
 
-        # comparaison avec self.dlg_selattributs.listattributs pour cocher ce qu'il y a en commun
+        list_sstype_val = self.get_sstype_valeur_from_dico(self.layer.name(),self.dico_layer_attrval)
+
         self.dlg_selattributs.listattributs.clear()
 
         layer_field = self.layer.fields().field(champ)
@@ -183,9 +183,8 @@ class JeuxAttributs:
         for val in valeurs_possibles:
             item = QListWidgetItem(val)
             item.setCheckState(Qt.Unchecked)
-            if val in list_att:
+            if (champ,val) in list_sstype_val:
                 item.setCheckState(Qt.Checked)
-                # print(val)
             self.dlg_selattributs.listattributs.addItem(item)
 
     def get_attrs_coches(self,coche = True):
@@ -208,7 +207,6 @@ class JeuxAttributs:
         self.dlg_selattributs.exec_()
 
     def change_champ(self):
-        # print("change_champ")
         self.dlg_selattributs.listattributs.clear()
         champ = self.dlg_selattributs.comboBoxchamps.currentText()
         self.init_list_valeur(champ)
@@ -218,7 +216,7 @@ class JeuxAttributs:
 
     @staticmethod
     def clear_layout(layout):
-        """Supprime tous les widgets d’un QLayout."""
+        """Supprime tous les widgets d’un QLayout"""
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
@@ -228,149 +226,215 @@ class JeuxAttributs:
             elif item.layout():
                 JeuxAttributs.clear_layout(item.layout())
 
+    # ajout du bouton de paramétrage
     def initLayout(self):
-        # Bouton fixe (ligne 0)
-        # pathicon = os.path.join(os.path.dirname(__file__),"icons", "config.png")
 
         self.btn_add = QPushButton()
-        self.btn_add.setIcon(QIcon(self.pathicon))
+        self.btn_add.setIcon(QIcon(self.pathicon_config))
         self.btn_add.setFixedWidth(20)
         self.btn_add.setFixedHeight(20)
         # self.btn_add.setStyleSheet("background-color: lightblue;")
         self.btn_add.clicked.connect(self.show_choix_attr_val)
 
-        # self.layout.setContentsMargins(5, 0, 0, 0)
-        self.layout.setVerticalSpacing(0)
-        self.layout.setHorizontalSpacing(0)
+        self.layout_boutons.addWidget(self.btn_add)
 
-        self.layout.addWidget(self.btn_add, 0, 0, 1, 1, Qt.AlignLeft)
-        # print("btn existant1 = ",self.layout.count())
-
-        self.dlg.setLayout(self.layout)
-        self.dlg.adjustSize()
+        self.dlg.setLayout(self.layout_boutons)
+        # self.dlg.adjustSize()
+        # self.dlg.updateGeometry()
         # Connecte l’événement de redimensionnement
-        # self.dlg.resizeEvent = self.on_resize
 
-        # Premier affichage différé
-        # QTimer.singleShot(0, self.ajout_btn)
+    def get_sstype_valeur_from_dico(self,layer,dico):
+        list_sstype_valeur = []
+        for cle , elements in dico.items():
+            if cle == layer:
+                for item in elements:
+                     list_sstype_valeur.append((item.get("sous_type"),item.get("valeur")))
+        # liste de tupples
+        return list_sstype_valeur
+
+    def get_icon_from_dico(self,layer,sous_type,valeur):
+        elements = self.dico_layer_attrval.get(layer, [])
+        for item in elements:
+            if item.get("sous_type") == sous_type and item.get("valeur") == valeur:
+                return item.get("icon", "")
+        # Aucun match trouvé → retourne une chaîne vide
+        return ""
+
+    def get_nombtn_from_dico(self,layer,sous_type,valeur):
+        elements = self.dico_layer_attrval.get(layer, [])
+        for item in elements:
+            if item.get("sous_type") == sous_type and item.get("valeur") == valeur:
+                return item.get("nom_btn", "")
+        # Aucun match trouvé → retourne une chaîne vide
+        return ""
 
     def ajout_btn_from_json(self):
-        button_width = 50
-        largeur_limite = 500
-        boutons_existants = self.layout.count()
-        # Calculer combien de boutons par ligne avant de passer à la suivante
-        boutons_par_ligne = max(1, largeur_limite // button_width)
-
         self.liste_filtres = []
-        for layer,champ_val in self.dico_layer_attrval.items():
+        for layer in self.dico_layer_attrval.keys():
             if layer == self.layer.name():
-                for i,(champ,valeur) in enumerate(champ_val):
-                    # print(f"champ = {champ} , valeur = {valeur}")
-                    # self.dlg.resize(self.dlg.width()+i*100,self.dlg.height())
+                champ_val = self.get_sstype_valeur_from_dico(self.layer.name(),self.dico_layer_attrval)
+                for sstype,valeur in champ_val:
+                    iconstr = self.get_icon_from_dico(self.layer.name(),sstype,valeur)
+                    path_icon = os.path.join(self.path_repicon_btn, iconstr)
+                    nom_json = self.get_nombtn_from_dico(self.layer.name(),sstype,valeur)
                     widget = QPushButton(valeur)
-                    # inistallation du filtre clic droit
+                    # initialisation du filtre clic droit
                     filtre = FiltreClicDroit(self)
                     self.liste_filtres.append(filtre)
                     widget.installEventFilter(filtre)
 
+                    # widget.setToolTip(f"{sstype}\t\U0001F846\t{valeur}")
+                    widget.setToolTip(f"{sstype}{SEPARATION_TOOLTIP}{valeur}")
 
-                    widget.setToolTip(f"{champ}\t\U0001F846\t{valeur}")
                     # widget.setFixedWidth(button_width)
                     widget.setFixedHeight(20)
-                    index = boutons_existants -1 + i # "-1" car le bouton "Choisir" est à (0,0)
-                    row = index // boutons_par_ligne
-                    col = (index % boutons_par_ligne) +1
 
-                    self.layout.addWidget(widget, row, col)
+                    # si icon present dans json on affiche l'icon
+                    # et on vide le nom du btn meme s'il est renseigné
+                    if iconstr != "":
+                        widget.setIcon(QIcon(path_icon))
+                        widget.setText("")
+                    else:
+                        widget.setText(nom_json)
 
                     # connexion d'un evenement clic pour chaque btn
-                    widget.clicked.connect(lambda checked, v=valeur, c=champ: self.clic_btn(v, c))
-        self.dlg.adjustSize()
+                    widget.clicked.connect(lambda checked, v=valeur, c=sstype: self.clic_btn(v, c))
+                    self.layout_boutons.addWidget(widget)
+                    # Recalcul dynamique de la taille du dialog
+                    self.layout_boutons.invalidate()
+                    self.layout_boutons.activate()
+                    # astuce : attendre la fin de la boucle d'événement avant de recalculer la taille
+                    QTimer.singleShot(0, self.dlg.adjustSize)
+
 
     def actualise_btn(self):
-        print("actualise_btn")
-
-        champ_courant = self.dlg_selattributs.comboBoxchamps.currentText()
+        sstype = self.dlg_selattributs.comboBoxchamps.currentText()
         valeurs = self.get_attrs_coches()
-
-        # liste_tuple_champ_attr_abs = []
-        # for attr in self.get_attrs_coches(False):
-        #     liste_tuple_champ_attr_abs.append((champ_courant,attr))
-        # self.dico_layer_attrval[self.layer.name()] = [
-        #     item for item in self.dico_layer_attrval[self.layer.name()]
-        #     if item not in liste_tuple_champ_attr_abs
-        # ]
 
         # Initialise la clé avec une liste vide si absente
         self.dico_layer_attrval.setdefault(self.layer.name(), [])
+        champ_attr_a_suppr = {(sstype, attr) for attr in self.get_attrs_coches(False)}
 
-        champ_attr_a_suppr = {(champ_courant, attr) for attr in self.get_attrs_coches(False)}
-        # Vérifie que la clé existe avant de filtrer
         if self.layer.name() in self.dico_layer_attrval:
             self.dico_layer_attrval[self.layer.name()] = [
                 item for item in self.dico_layer_attrval[self.layer.name()]
-                if item not in champ_attr_a_suppr
+                if (item.get("sous_type"), item.get("valeur")) not in champ_attr_a_suppr
             ]
-        # ajout du btn dans le dictionnaire
+
         for val in valeurs:
-            tuple_champ_val = (champ_courant, val)
-            if tuple_champ_val not in self.dico_layer_attrval[self.layer.name()]:
-                self.dico_layer_attrval[self.layer.name()].append(tuple_champ_val)
+            # Vérifie si le tuple (sous_type, valeur) existe déjà dans les dict
+            exists = any(
+                item.get("sous_type") == sstype and item.get("valeur") == val
+                for item in self.dico_layer_attrval[self.layer.name()]
+            )
+            if not exists:
+                # Ajoute un dictionnaire complet avec valeurs par défaut
+                self.dico_layer_attrval[self.layer.name()].append({
+                    "sous_type": sstype,
+                    "valeur": val,
+                    "nom_btn": val,  # nom par défaut
+                    "icon": "",
+                    "autre_valeur": {}
+                })
 
         # écriture du nouveau btn dans le json
         self.save_json()
 
-        # chargement a partir du json
-        self.clear_layout(self.layout)
+        self.clear_layout(self.layout_boutons)
+        self.liste_filtres = []
         self.initLayout()
         self.load_json()
         self.ajout_btn_from_json()
 
     def save_json(self):
-        print("save_json")
-        """Sauvegarde la configuration des boutons associés à chaque champ."""
-        # path = os.path.join(os.path.dirname(__file__), "config.json")
-        # Charger la config existante pour la mettre à jour proprement
+        if not self.layer:
+            return
+        # Partir de l'ancien contenu si présent
+        config = {}
         if os.path.exists(self.pathjson):
             try:
                 with open(self.pathjson, "r", encoding="utf-8") as f:
                     config = json.load(f)
             except json.JSONDecodeError:
+                print("Fichier JSON corrompu, un nouveau sera créé.")
                 config = {}
-        else:
-            config = {}
-        # Mise à jour de la configuration du layer courant
-        if self.layer:
-            config[self.layer.name()] = self.dico_layer_attrval[self.layer.name()]
+        elements = []
 
-        # Écriture dans le fichier
-        with open(self.pathjson, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            sous_type = item.get("sous_type")
+            valeur = item.get("valeur")
+            nom_btn = item.get("nom_btn", "")
+            icon = item.get("icon", "")
+            autre_valeur = item.get("autre_valeur", {})
+
+            # Compléter depuis l'ancien JSON si présent
+            if self.datajson and self.datajson.data:
+                for old_item in self.datajson.data.get(self.layer.name(), []):
+                    if old_item["sous_type"] == sous_type and old_item["valeur"] == valeur:
+                        icon = old_item.get("icon", icon)
+                        autre_valeur = old_item.get("autre_valeur", autre_valeur)
+                        nom_btn = old_item.get("nom_btn", nom_btn)
+                        break
+
+            elements.append({
+                "sous_type": sous_type,
+                "valeur": valeur,
+                "nom_btn": nom_btn,
+                "icon": icon,
+                "autre_valeur": autre_valeur
+            })
+
+        # Mettre à jour seulement la couche courante
+        config[self.layer.name()] = elements
+
+        # Sauvegarde sur disque
+        try:
+            with open(self.pathjson, "w", encoding="utf-8") as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Erreur lors de la sauvegarde JSON : {e}")
 
     def load_json(self):
-        """Charge la configuration enregistrée pour le layer courant et recrée les boutons."""
-        # path = os.path.join(os.path.dirname(__file__), "config.json")
+        # self.datajson = JsonRead()
+        # data = self.datajson.charger_json(self.pathjson)
+        with open(self.pathjson, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-        if not os.path.exists(self.pathjson):
+        #  si c'est un recupere bien un dictionnaire issu du json
+        if not isinstance(data, dict):
+            print("Format JSON incorrect : ce doit être un dictionnaire")
             return
-        try:
-            with open(self.pathjson, "r", encoding="utf-8") as f:
-                config = json.load(f)
-        except json.JSONDecodeError:
-            return
-        if not self.layer:
-            return
-        layer_name = self.layer.name()
-        if layer_name not in config:
-            return
-        # Charger la liste de couples [(champ, valeur), ...]
-        # self.champ_attr_sel = config[layer_name]
-        self.dico_layer_attrval = {
-            key: [tuple(p) for p in pairs] if pairs else []
-            for key, pairs in config.items()
-        }
-        self.dlg.adjustSize()
 
+        for layer_name, elements in data.items():
+            if not isinstance(elements, list):
+                print(f"La valeur pour {layer_name} n’est pas une liste.")
+                continue
+
+            cleaned_elements = []
+            for item in elements:
+                if not isinstance(item, dict):
+                    print(f"Élément inattendu dans {layer_name} : {item}")
+                    continue
+
+                # On récupère proprement tous les champs attendus
+                sous_type = item.get("sous_type", "")
+                valeur = item.get("valeur", "")
+                nom_btn = item.get("nom_btn", "")
+                icon = item.get("icon", "")
+                autre_valeur = item.get("autre_valeur", {}) or {}
+
+                # On reconstruit un dict cohérent
+                cleaned_item = {
+                    "sous_type": sous_type,
+                    "valeur": valeur,
+                    "nom_btn": nom_btn,
+                    "icon": icon,
+                    "autre_valeur": autre_valeur
+                }
+                cleaned_elements.append(cleaned_item)
+
+            # On stocke la liste d’éléments nettoyés dans le dico principal
+            self.dico_layer_attrval[layer_name] = cleaned_elements
 
     def clic_btn(self,val,champ_courant):
         print(f"CLIC BOUTON ,champ courant - val = {champ_courant}-{val}")
@@ -380,34 +444,29 @@ class JeuxAttributs:
             self.layer.changeAttributeValue(sel.id(), id_champ,val)
 
     def on_active_layer_changed(self,layer):
-        if layer:
-            self.layer = layer
-            JeuxAttributs.clear_layout(self.layout)
-            self.initLayout()
-            self.load_json()
-            self.ajout_btn_from_json()
-        else:
+        print("on_active_layer_changed")
+        if not layer:
             self.layer = None
+            return
+        self.layer = layer
+
+        JeuxAttributs.clear_layout(self.layout_boutons)
+        self.initLayout()
+        self.load_json()
+        self.ajout_btn_from_json()
+
 
     def importer(self):
-        print("importer")
-        fichier, _ = QFileDialog.getOpenFileName(
-            None,
+        fichier, _ = QFileDialog.getOpenFileName(None,
             "Sélectionner un fichier 'config.json'",
-            os.path.join(os.path.dirname(__file__)),
-            "Fichier json (*.json)"
-        )
+            os.path.join(os.path.dirname(__file__)),"Fichier json (*.json)")
 
     def exporter(self):
-        print("Exporter")
-        dossier = QFileDialog.getExistingDirectory(
-            None,
-            "Sélectionner un répertoire de sauvegarde de la configuration"
-        )
+        dossier = QFileDialog.getExistingDirectory(None,
+        "Sélectionner un répertoire de sauvegarde de la configuration")
 
     def initGui(self):
         pass
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
 
     def unload(self):
@@ -423,7 +482,12 @@ class JeuxAttributs:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start:
             self.first_start = False
-            # self.dlg = JeuxAttributsDialog()
+
+        # libère références Python aux anciennes UI (si elles existent)
+        self.dlg = None
+        self.dlg_selattributs = None
+        self.layout_boutons = None
+        self.liste_filtres = []
 
         self.dlg_selattributs = QDialog()
         loadUi(os.path.join(os.path.dirname(__file__), "choix_widgets.ui"), self.dlg_selattributs)
@@ -434,32 +498,25 @@ class JeuxAttributs:
         self.dlg.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__),"icons" ,"icon_principal.png")))
         self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
 
-        self.layout = QGridLayout()
-
         self.layer = self.iface.activeLayer()
+        self.layout_boutons = LayoutFluide(self.dlg)
         self.initLayout()
         self.load_json()
         self.ajout_btn_from_json()
 
         # EVENEMENT DE CHANGEMENT DE LAYER ACTIF
+        # s'assurer de ne pas connecter plusieurs fois
+        try:
+            self.iface.layerTreeView().currentLayerChanged.disconnect(self.on_active_layer_changed)
+        except Exception:
+            pass
         self.iface.layerTreeView().currentLayerChanged.connect(self.on_active_layer_changed)
-        # événement dialog principal
-        # self.btn_selchamp.clicked.connect(self.show_choix_attr_val)
 
         # événement du dialog de choix des champs
-        # self.dlg_selattributs.pushButtonOk.clicked.connect(self.ajout_btn)
         self.dlg_selattributs.pushButtonOk.clicked.connect(self.actualise_btn)
         self.dlg_selattributs.pushButtonImporter.clicked.connect(self.importer)
         self.dlg_selattributs.pushButtonExporter.clicked.connect(self.exporter)
-
         self.dlg_selattributs.comboBoxchamps.currentTextChanged.connect(self.change_champ)
 
         self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result == QDialog.Rejected:
-            # self.save_json()
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+

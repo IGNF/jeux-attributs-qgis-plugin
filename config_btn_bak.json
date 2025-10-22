@@ -1,0 +1,12 @@
+{
+ "troncon_de_route": [
+  ["nature","Chemin"],
+  ["nature","Route empierrée"],
+  ["nature","Route à 1 chaussée"],
+  ["etat_de_l_objet","En construction"]
+ ],
+ "construction_lineaire": [
+  ["etat_de_l_objet","En projet"],
+  ["etat_de_l_objet","En ruine"]
+ ]
+}

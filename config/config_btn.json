@@ -1,0 +1,85 @@
+{
+  "troncon_de_route": [
+    {
+      "sous_type": "nature",
+      "valeur": "Route empierrée",
+      "nom_btn": "Route empierrée",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "etat_de_l_objet",
+      "valeur": "En service",
+      "nom_btn": "En service",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "etat_de_l_objet",
+      "valeur": "En construction",
+      "nom_btn": "En construction",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "etat_de_l_objet",
+      "valeur": "En projet",
+      "nom_btn": "En projet",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature_de_la_restriction",
+      "valeur": "Entrée avec gardien",
+      "nom_btn": "Entrée avec gardien",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature_de_la_restriction",
+      "valeur": "Interdit à la descente",
+      "nom_btn": "Interdit à la descente",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "sens_amenagement_cyclable_gauche",
+      "valeur": "Double sens",
+      "nom_btn": "Double sens",
+      "icon": "",
+      "autre_valeur": {}
+    }
+  ],
+  "construction_lineaire": [
+    {
+      "sous_type": "nature",
+      "valeur": "Barrage",
+      "nom_btn": "Barrage",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Clôture",
+      "nom_btn": "Clôture",
+      "icon": "",
+      "autre_valeur": {}
+    }
+  ],
+  "cimetiere": [
+    {
+      "sous_type": "nature",
+      "valeur": "Civil",
+      "nom_btn": "Civil",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Militaire",
+      "nom_btn": "Militaire",
+      "icon": "",
+      "autre_valeur": {}
+    }
+  ]
+}
