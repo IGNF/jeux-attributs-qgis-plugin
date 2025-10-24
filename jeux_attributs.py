@@ -349,6 +349,15 @@ class JeuxAttributs:
             # cas de liste de dictionnaire → on dépile
             if isinstance(v, dict):
                 valeurs_possibles.extend(v.values())  # récupérer les vrais libellés
+            # cas où c'est une liste : cf troncon hydro
+            elif isinstance(v, list):
+                # Cas d’une liste → on ajoute chaque élément
+                for elem in v:
+                    if isinstance(elem, dict):
+                        # Cas d’une liste de dictionnaires
+                        valeurs_possibles.extend(elem.values())
+                    else:
+                        valeurs_possibles.append(elem)
             else:
                 valeurs_possibles.append(v)
 

@@ -1,80 +1,37 @@
 {
-  "troncon_de_route": [
-    {
-      "sous_type": "nature",
-      "valeur": "Route empierrée",
-      "nom_btn": "1",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "1",
-        "etat_de_l_objet": "En projet"
-      }
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Bretelle",
-      "nom_btn": "2",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "2"
-      }
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Escalier",
-      "nom_btn": "3",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "3"
-      }
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Chemin",
-      "nom_btn": "4",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "4"
-      }
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Rond-point",
-      "nom_btn": "5",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "5"
-      }
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Route à 1 chaussée",
-      "nom_btn": "6",
-      "icon": "",
-      "autre_valeur": {
-        "importance": "6"
-      }
-    }
-  ],
-  "construction_lineaire": [
+  "construction_ponctuelle": [
     {
       "sous_type": "etat_de_l_objet",
       "valeur": "En projet",
-      "nom_btn": "gtgt",
+      "nom_btn": "En projet",
       "icon": "",
-      "autre_valeur": {
-        "Importance": "5",
-        "Sens de circulation": "Double sens"
-      }
+      "autre_valeur": {}
+    }
+  ],
+  "surface_hydrographique": [
+    {
+      "sous_type": "nature",
+      "valeur": "Aqueduc",
+      "nom_btn": "Aqueduc",
+      "icon": "",
+      "autre_valeur": {}
     },
     {
-      "sous_type": "etat_de_l_objet",
-      "valeur": "En ruine",
-      "nom_btn": "ge",
-      "icon": "Acces_impossible.ico",
+      "sous_type": "nature",
+      "valeur": "Canal",
+      "nom_btn": "Canal",
+      "icon": "",
+      "autre_valeur": {}
+    }
+  ],
+  "troncon_hydrographique": [
+    {
+      "sous_type": "nature",
+      "valeur": "Canal",
+      "nom_btn": "Canal",
+      "icon": "",
       "autre_valeur": {
-        "Importance": "5",
-        "Sens de circulation": "Double sens"
+        "etat_de_l_objet": "En projet"
       }
     }
   ]
