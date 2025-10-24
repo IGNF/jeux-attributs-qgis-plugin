@@ -3,83 +3,79 @@
     {
       "sous_type": "nature",
       "valeur": "Route empierrée",
-      "nom_btn": "Route empierrée",
+      "nom_btn": "1",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "1",
+        "etat_de_l_objet": "En projet"
+      }
     },
     {
-      "sous_type": "etat_de_l_objet",
-      "valeur": "En service",
-      "nom_btn": "En service",
+      "sous_type": "nature",
+      "valeur": "Bretelle",
+      "nom_btn": "2",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "2"
+      }
     },
     {
-      "sous_type": "etat_de_l_objet",
-      "valeur": "En construction",
-      "nom_btn": "En construction",
+      "sous_type": "nature",
+      "valeur": "Escalier",
+      "nom_btn": "3",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "3"
+      }
     },
     {
-      "sous_type": "etat_de_l_objet",
-      "valeur": "En projet",
-      "nom_btn": "En projet",
+      "sous_type": "nature",
+      "valeur": "Chemin",
+      "nom_btn": "4",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "4"
+      }
     },
     {
-      "sous_type": "nature_de_la_restriction",
-      "valeur": "Entrée avec gardien",
-      "nom_btn": "Entrée avec gardien",
+      "sous_type": "nature",
+      "valeur": "Rond-point",
+      "nom_btn": "5",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "5"
+      }
     },
     {
-      "sous_type": "nature_de_la_restriction",
-      "valeur": "Interdit à la descente",
-      "nom_btn": "Interdit à la descente",
+      "sous_type": "nature",
+      "valeur": "Route à 1 chaussée",
+      "nom_btn": "6",
       "icon": "",
-      "autre_valeur": {}
-    },
-    {
-      "sous_type": "sens_amenagement_cyclable_gauche",
-      "valeur": "Double sens",
-      "nom_btn": "Double sens",
-      "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "importance": "6"
+      }
     }
   ],
   "construction_lineaire": [
     {
-      "sous_type": "nature",
-      "valeur": "Barrage",
-      "nom_btn": "Barrage",
+      "sous_type": "etat_de_l_objet",
+      "valeur": "En projet",
+      "nom_btn": "gtgt",
       "icon": "",
-      "autre_valeur": {}
+      "autre_valeur": {
+        "Importance": "5",
+        "Sens de circulation": "Double sens"
+      }
     },
     {
-      "sous_type": "nature",
-      "valeur": "Clôture",
-      "nom_btn": "Clôture",
-      "icon": "",
-      "autre_valeur": {}
-    }
-  ],
-  "cimetiere": [
-    {
-      "sous_type": "nature",
-      "valeur": "Civil",
-      "nom_btn": "Civil",
-      "icon": "",
-      "autre_valeur": {}
-    },
-    {
-      "sous_type": "nature",
-      "valeur": "Militaire",
-      "nom_btn": "Militaire",
-      "icon": "",
-      "autre_valeur": {}
+      "sous_type": "etat_de_l_objet",
+      "valeur": "En ruine",
+      "nom_btn": "ge",
+      "icon": "Acces_impossible.ico",
+      "autre_valeur": {
+        "Importance": "5",
+        "Sens de circulation": "Double sens"
+      }
     }
   ]
 }

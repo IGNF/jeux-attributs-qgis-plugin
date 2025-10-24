@@ -25,11 +25,15 @@
   <property name="windowTitle">
    <string>Jeux d'attributs</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icons/icon_principal.PNG</normaloff>icons/icon_principal.PNG</iconset>
+  </property>
   <widget class="QPushButton" name="pushButtonOk">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>210</y>
+     <y>250</y>
      <width>261</width>
      <height>28</height>
     </rect>
@@ -44,7 +48,7 @@
      <x>10</x>
      <y>80</y>
      <width>261</width>
-     <height>121</height>
+     <height>161</height>
     </rect>
    </property>
   </widget>
@@ -56,32 +60,6 @@
      <width>261</width>
      <height>22</height>
     </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonImporter">
-   <property name="geometry">
-    <rect>
-     <x>170</x>
-     <y>250</y>
-     <width>51</width>
-     <height>28</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Importer</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonExporter">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>250</y>
-     <width>51</width>
-     <height>28</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Exporter</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">

@@ -23,9 +23,12 @@
 """
 from PyQt5.QtCore import QObject, QEvent, QTimer
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QListWidgetItem, QPushButton, QFileDialog, QListView
+from PyQt5.QtWidgets import QDialog, QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
+    QAbstractItemView, QTableView
 from PyQt5.uic import loadUi
 import json
+
+from qgis._core import QgsMessageLog, Qgis
 
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
@@ -42,35 +45,38 @@ class FiltreClicDroit(QObject):
 
     def eventFilter(self,obj,event):
         if event.type() == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
-            self.class_parent.show_choix_icon(obj)
-            return True  # on consomme l’événement (empêche le clic normal)
+            self.class_parent.show_dlg_config_btn(obj)
+            return True  # on consomme l’événement (empêche le clic normal).
         return False
 
-class JeuxAttributs():
+class JeuxAttributs:
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
-        """Constructor.
+        # choix de l'icône
+        self.button_ok = None
+        self.listview = None
+        self.new_index_btn = None
 
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
-        # Save reference to the QGIS interface
-        self.dlg_choix_icon = None
-        self.clicked_button = None
-        self.datajson = None
+        self.valeur_btn_sel = None
+        self.sstype_btn_sel = None
+
+        self.dlg_sel_champ_val = None
+        self.dlg_config_btn = None
         self.dlg = None
+        self.dlg_icon = None
+
+        self.clicked_button = None
+
         self.iface = iface
         self.layer = None
-        # self.layout = None
         self.dico_layer_attrval = {}
         self.liste_filtres = []
         self.model = None
         self.pathiconbtnclicked = None
         self.pathjson = os.path.join(os.path.dirname(__file__),"config", "config_btn.json")
         self.pathicon_config = os.path.join(os.path.dirname(__file__), "icons", "config.png")
+        self.pathicon_interface = os.path.join(os.path.dirname(__file__), "icons", "icon_principal.png")
         self.path_repicon_btn = os.path.join(os.path.dirname(__file__),"config", "icons_btn")
 
         self.layout_boutons = None
@@ -79,55 +85,224 @@ class JeuxAttributs():
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
 
-
-    def show_choix_icon(self,btn):
+    def show_dlg_config_btn(self,btn):
         self.clicked_button = btn
         # recuperation des infos du boutons cliqué grace au tooltip qui contient : sstype, valeur
         tooltip = self.clicked_button.toolTip()
-        sstype, valeur = tooltip.split(SEPARATION_TOOLTIP)
+        self.sstype_btn_sel, self.valeur_btn_sel = tooltip.split(SEPARATION_TOOLTIP)
 
-        self.dlg_choix_icon = QDialog()
-        loadUi(os.path.join(os.path.dirname(__file__), "choix_icon.ui"), self.dlg_choix_icon)
-        self.dlg_choix_icon.setWindowTitle("Paramétrage des boutons et des actions associés")
-        self.dlg_choix_icon.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
-        self.init_listview_icones()
-        self.dlg_choix_icon.lineEditNomBtn.setText(self.clicked_button.text())
+        self.dlg_config_btn.setWindowTitle("Paramétrage des boutons et des actions associés")
+        self.dlg_config_btn.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        # le nom est récupéré à partir du tooltip
+        # car si l'icône est renseigné le bouton perd son nom
+        self.dlg_config_btn.lineEditNomBtn.setText(btn.text())
 
-        sstype_str = f"<span style='color: red'><b>{sstype}</b></span>"
-        self.dlg_choix_icon.label_ss_type.setText(sstype_str)
-        valeur_str = f"<span style='color: red'><b>{valeur}</b></span>"
-        self.dlg_choix_icon.label_valeur.setText(valeur_str)
-        self.dlg_choix_icon.label_fleche.setText(SEPARATION_TOOLTIP)
+        # ****************NOM BOUTON*****************
+        nom_btn = ""
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                # Exemple : mise à jour du nom du bouton
+                nom_btn = item["nom_btn"]
+                break
+        self.dlg_config_btn.lineEditNomBtn.setText(nom_btn)
 
-        self.dlg_choix_icon.radioButtonText.setChecked(True)
-        self.dlg_choix_icon.labelAvertissement.setText("")
-        self.dlg_choix_icon.show()
-        self.dlg_choix_icon.pushButtonOk.clicked.connect(self.valide_config_btn)
+        # ****************ICONE**********************
+        icon_str = ""
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                    # Exemple : mise à jour du nom du bouton
+                    icon_str = item["icon"]
+                    break
+        self.dlg_config_btn.lineEdit_icone.setText(icon_str)
+        path = os.path.join(self.path_repicon_btn,icon_str)
+        pixmap = QPixmap(path)
+        pixmap = pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
-    def valide_config_btn(self):
-        if self.dlg_choix_icon.radioButtonText.isChecked():
-            if self.dlg_choix_icon.lineEditNomBtn.text() == "":
-                self.dlg_choix_icon.labelAvertissement.setText("<span style='color: red'><b>Le nom du bouton est vide</b></span>")
+        # ***************AUTRE VALEUR*********************
+        autre_sstype_valeur = {}
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                # Exemple : mise à jour du nom du bouton
+                autre_sstype_valeur = item["autre_valeur"]
+                break
+        model = self.dlg_config_btn.tableView_autre_valeur.model()
+        # il faut vider le tableview avant d'ajouter
+        model.clear()
+        for sstype_autre, valeur_autre in autre_sstype_valeur.items():
+            model.appendRow([QStandardItem(sstype_autre), QStandardItem(valeur_autre)])
+        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(0, 200)
+        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(1, 100)
+
+        # ****************** config widget deplacement
+        nb_btn_tolayer = len(self.dico_layer_attrval[self.layer.name()])
+        self.dlg_config_btn.spinBoxPosition.setRange(1,nb_btn_tolayer)
+        self.dlg_config_btn.spinBoxPosition.setValue(self.getposbtn()+1)
+
+        sstype_str = f"<span style='color: red'><b>{self.sstype_btn_sel}</b></span>"
+        self.dlg_config_btn.label_ss_type.setText(sstype_str)
+        valeur_str = f"<span style='color: red'><b>{self.valeur_btn_sel}</b></span>"
+        self.dlg_config_btn.label_valeur.setText(valeur_str)
+        self.dlg_config_btn.label_fleche.setText(SEPARATION_TOOLTIP)
+
+        self.dlg_config_btn.radioButtonText.setChecked(True)
+        self.dlg_config_btn.labelAvertissement.setText("")
+
+
+        try:
+            self.dlg_config_btn.pushButton_choix_icon.clicked.disconnect()
+        except TypeError:
+            pass
+        self.dlg_config_btn.pushButton_choix_icon.clicked.connect(lambda: self.choix_icone(self.sstype_btn_sel, self.valeur_btn_sel))
+        self.dlg_config_btn.lineEditNomBtn.textChanged.connect(self.nom_btn_change)
+
+        self.dlg_config_btn.exec_()
+
+    def getposbtn(self):
+        index_btn_sel = next(
+            (i for i, item in enumerate(self.dico_layer_attrval[self.layer.name()])
+             if item["sous_type"] == self.sstype_btn_sel and item["valeur"] == self.valeur_btn_sel),
+            None
+        )
+        # (+1) la premiere position est 1, pas 0
+        return index_btn_sel
+
+    def spinbox_change(self, value):
+        self.new_index_btn = value
+
+    def suppr_ligne_tableview(self):
+        # recuperation de la selection
+        model = self.dlg_config_btn.tableView_autre_valeur.model()
+        selection_model = self.dlg_config_btn.tableView_autre_valeur.selectionModel()
+        # index des lignes selectionnées
+        selected_indexes = selection_model.selectedRows()
+
+        for index in selected_indexes:
+            row = index.row()
+            model.removeRow(row)
+
+        # maj du dictionnaire
+        self.clicked_button.toolTip()
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                # Exemple : mise à jour du nom du bouton
+                item["autre_valeur"] = self.convert_tableview_to_dico()
+                break
+        self.save_json()
+
+    def deplace_btn(self):
+        # print("deplace a l'index : index = ",self.new_index_btn)
+        dico_avant = self.dico_layer_attrval[self.layer.name()]
+
+        # arrangement du dico "-1" car la premiere position est à 0 et non 1
+        new_index = self.new_index_btn -1
+        # recuperation de la position du bouton sélectionné à partir du json
+        index_btn_sel = self.getposbtn()
+        # Échange des deux positions
+        dico_avant[new_index], dico_avant[index_btn_sel] = (
+            dico_avant[index_btn_sel],
+            dico_avant[new_index],
+        )
+        # sauvegarde
+        self.dico_layer_attrval[self.layer.name()] = dico_avant
+        self.save_json()
+
+    def nom_btn_change(self):
+        if self.dlg_config_btn.lineEditNomBtn.text() != "":
+            self.dlg_config_btn.labelAvertissement.setText("")
+
+    def valide_config_btn(self,sstype,valeur):
+        # print(f"valide_config_btn : {sstype}, {valeur}")
+        self.valide_nom_btn(sstype,valeur)
+
+        if self.dlg_config_btn.radioButtonText.isChecked():
+            if self.dlg_config_btn.lineEditNomBtn.text() == "":
+                self.dlg_config_btn.labelAvertissement.setText("<span style='color: red'><b>Le nom du bouton est vide</b></span>")
                 return
-            self.clicked_button.setText(self.dlg_choix_icon.lineEditNomBtn.text())
-            self.clicked_button.setIcon(QIcon())
-            self.clicked_button.adjustSize()
+            else:
+                self.clicked_button.setText(self.dlg_config_btn.lineEditNomBtn.text())
+                # self.clicked_button.setIcon(QIcon())
+                # self.clicked_button.adjustSize()
 
-        elif self.dlg_choix_icon.radioButtonIcon.isChecked():
+        elif self.dlg_config_btn.radioButtonIcon.isChecked():
             if self.pathiconbtnclicked is None:
-                self.dlg_choix_icon.labelAvertissement.setText(
+                self.dlg_config_btn.labelAvertissement.setText(
                     "<span style='color: red'><b>Aucune icône n'est sélectionnée</b></span>")
                 return
-            self.clicked_button.setText("")
-            self.clicked_button.setIcon(QIcon(self.pathiconbtnclicked))
+            else:
+                self.clicked_button.setText("")
+                self.clicked_button.setIcon(QIcon(self.pathiconbtnclicked))
             # self.clicked_button.setFixedWidth(20)
-        self.dlg_choix_icon.close()
+        self.save_json()
+        self.clear_layout(self.layout_boutons)
+        self.liste_filtres = []
+        self.initLayout()
+        self.load_json()
+        self.ajout_btn_from_json()
+        self.dlg_config_btn.close()
+
+    def choix_autre_valeur(self):
+        self.dlg_sel_champ_val_AUTRE.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_sel_champ_val_AUTRE.comboBoxchamps.clear()
+        self.dlg_sel_champ_val_AUTRE.listattributs.clear()
+        self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
+        self.dlg_sel_champ_val_AUTRE.exec_()
+
+    def valide_nom_btn(self,sstype,valeur):
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == sstype and item.get("valeur") == valeur:
+                # Exemple : mise à jour du nom du bouton
+                item["nom_btn"] = self.dlg_config_btn.lineEditNomBtn.text()
+                break
+
+    def valide_icone(self,sstype,valeur):
+        # sauvegarde de l'icon le dictionnaire
+        if self.pathiconbtnclicked:
+            filico = os.path.basename(self.pathiconbtnclicked)
+            self.dlg_config_btn.lineEdit_icone.setText(filico)
+        else:
+            filico = ""
+        # ajout de l'icone dans le dictionnaire et suppression du nom
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == sstype and item.get("valeur") == valeur:
+                # Exemple : mise à jour de l'icône du bouton
+                item["icon"] = filico
+                # item["nom_btn"] = ""
+                break
+        # on actualise l'icone a afficher apres le nom de l'icone
+        # path = os.path.join(self.path_repicon_btn, icon_str)
+        pixmap = QPixmap(self.pathiconbtnclicked)
+        pixmap = pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
+
+    def valide_dlg_icone(self,sstype,valeur):
+        self.valide_icone(sstype, valeur)
+        self.dlg_icon.close()
+
+    def choix_icone(self,sstype,valeur):
+        # interface
+        self.dlg_icon = QDialog()
+        self.dlg_icon.setWindowTitle("Choisir une icône...")
+        self.dlg_icon.setWindowIcon(QIcon(self.pathicon_interface))
+        self.dlg_icon.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        layout = QVBoxLayout()
+        self.listview = QListView()
+        self.button_ok = QPushButton("Valider")
+        layout.addWidget(self.listview)
+        layout.addWidget(self.button_ok)
+        self.dlg_icon.setLayout(layout)
+        # self.button_ok.clicked.connect(lambda:self.valider_icone(sstype,valeur))
+        self.button_ok.clicked.connect(lambda:self.valide_dlg_icone(sstype,valeur))
+
+        self.init_listview_icones()
+
+        self.dlg_icon.exec_()
 
     def init_listview_icones(self):
         self.model = QStandardItemModel()
-        self.dlg_choix_icon.listViewIcone.setModel(self.model)
-        self.dlg_choix_icon.listViewIcone.setViewMode(QListView.IconMode)
-        self.dlg_choix_icon.listViewIcone.setSelectionMode(QListView.SingleSelection)
+        self.listview.setModel(self.model)
+        self.listview.setViewMode(QListView.IconMode)
+        self.listview.setSelectionMode(QListView.SingleSelection)
         for filename in os.listdir(self.path_repicon_btn):
             if filename.lower().endswith(".ico"):
                 path = os.path.join(self.path_repicon_btn, filename)
@@ -140,41 +315,38 @@ class JeuxAttributs():
                 item.setEditable(False)
                 self.model.appendRow(item)
 
-        self.dlg_choix_icon.listViewIcone.clicked.connect(self.get_icon_path_selected)
+        self.listview.clicked.connect(self.get_icon_path_selected)
 
     def get_icon_path_selected(self, index):
         """Quand l'utilisateur clique sur une icône."""
         self.pathiconbtnclicked = self.model.itemFromIndex(index).data()
-        # self.clicked_button.setText("")
-        # self.clicked_button.setIcon(QIcon(path))
-        # self.clicked_button.setFixedWidth(20)
-
 
     # ajout de tous les champs possible dans le combobox
-    def init_combo_choix_champ(self):
+    def init_combo_choix_champ(self,dlg):
         self.layer = self.iface.activeLayer()
         for field in self.layer.fields():
             index = self.layer.fields().indexOf(field.name())
             widget_type = self.get_type_champ(index)
             if widget_type == "ValueMap":
-                self.dlg_selattributs.comboBoxchamps.addItem(field.name())
+                # self.dlg_selattributs.comboBoxchamps.addItem(field.name())4
+                dlg.comboBoxchamps.addItem(field.name())
 
     # initialise toutes les valeurs en fonction du champ sélectionné
-    def init_list_valeur(self,champ):
+    def init_list_valeur(self,champ,dlg):
         # pk faire ce test !!
         if champ == "":
             return
 
         list_sstype_val = self.get_sstype_valeur_from_dico(self.layer.name(),self.dico_layer_attrval)
 
-        self.dlg_selattributs.listattributs.clear()
+        dlg.listattributs.clear()
 
         layer_field = self.layer.fields().field(champ)
         # Vérifier le type d’éditeur
         editor_setup = layer_field.editorWidgetSetup()
         valeurs_possibles = []
         for v in editor_setup.config().values():
-            # cas de liste de dictionnaire -> on de-pile
+            # cas de liste de dictionnaire → on dépile
             if isinstance(v, dict):
                 valeurs_possibles.extend(v.values())  # récupérer les vrais libellés
             else:
@@ -183,33 +355,45 @@ class JeuxAttributs():
         for val in valeurs_possibles:
             item = QListWidgetItem(val)
             item.setCheckState(Qt.Unchecked)
-            if (champ,val) in list_sstype_val:
-                item.setCheckState(Qt.Checked)
-            self.dlg_selattributs.listattributs.addItem(item)
+            if dlg == self.dlg_sel_champ_val:
+                if (champ,val) in list_sstype_val:
+                    item.setCheckState(Qt.Checked)
+            dlg.listattributs.addItem(item)
+            if dlg == self.dlg_sel_champ_val_AUTRE:
+                self.dlg_sel_champ_val_AUTRE.listattributs.itemChanged.connect(self.on_item_changed)
 
-    def get_attrs_coches(self,coche = True):
+    def on_item_changed(self, changed_item):
+        """Empêche d'avoir plusieurs cases cochées."""
+        if changed_item.checkState():
+            # Décoche toutes les autres
+            for i in range(self.dlg_sel_champ_val_AUTRE.listattributs.count()):
+                item = self.dlg_sel_champ_val_AUTRE.listattributs.item(i)
+                if item is not changed_item and item.checkState():
+                    item.setCheckState(0)
+
+    def get_attrs_coches(self,dlg,coche = True):
         val_coche = []
         if coche:
             bcoche = Qt.Checked
         else:
             bcoche = Qt.Unchecked
-        for i in range(self.dlg_selattributs.listattributs.count()):
-            item = self.dlg_selattributs.listattributs.item(i)
+        for i in range(dlg.listattributs.count()):
+            item = dlg.listattributs.item(i)
             if item.checkState() == bcoche:
                 val_coche.append(item.text())
         return val_coche
 
     def show_choix_attr_val(self):
-        self.dlg_selattributs.comboBoxchamps.clear()
-        self.dlg_selattributs.listattributs.clear()
-        self.init_combo_choix_champ()
-        self.dlg_selattributs.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
-        self.dlg_selattributs.exec_()
+        self.dlg_sel_champ_val.comboBoxchamps.clear()
+        self.dlg_sel_champ_val.listattributs.clear()
+        self.init_combo_choix_champ(self.dlg_sel_champ_val)
+        self.dlg_sel_champ_val.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_sel_champ_val.exec_()
 
-    def change_champ(self):
-        self.dlg_selattributs.listattributs.clear()
-        champ = self.dlg_selattributs.comboBoxchamps.currentText()
-        self.init_list_valeur(champ)
+    def change_champ(self,dlg):
+        dlg.listattributs.clear()
+        champ = dlg.comboBoxchamps.currentText()
+        self.init_list_valeur(champ,dlg)
 
     def get_type_champ(self,index):
         return self.layer.editorWidgetSetup(index).type()
@@ -228,20 +412,16 @@ class JeuxAttributs():
 
     # ajout du bouton de paramétrage
     def initLayout(self):
-
-        self.btn_add = QPushButton()
-        self.btn_add.setIcon(QIcon(self.pathicon_config))
-        self.btn_add.setFixedWidth(20)
-        self.btn_add.setFixedHeight(20)
+        btn_add = QPushButton()
+        btn_add.setIcon(QIcon(self.pathicon_config))
+        btn_add.setFixedWidth(20)
+        btn_add.setFixedHeight(20)
         # self.btn_add.setStyleSheet("background-color: lightblue;")
-        self.btn_add.clicked.connect(self.show_choix_attr_val)
+        btn_add.clicked.connect(self.show_choix_attr_val)
 
-        self.layout_boutons.addWidget(self.btn_add)
+        self.layout_boutons.addWidget(btn_add)
 
         self.dlg.setLayout(self.layout_boutons)
-        # self.dlg.adjustSize()
-        # self.dlg.updateGeometry()
-        # Connecte l’événement de redimensionnement
 
     def get_sstype_valeur_from_dico(self,layer,dico):
         list_sstype_valeur = []
@@ -283,7 +463,6 @@ class JeuxAttributs():
                     self.liste_filtres.append(filtre)
                     widget.installEventFilter(filtre)
 
-                    # widget.setToolTip(f"{sstype}\t\U0001F846\t{valeur}")
                     widget.setToolTip(f"{sstype}{SEPARATION_TOOLTIP}{valeur}")
 
                     # widget.setFixedWidth(button_width)
@@ -306,14 +485,74 @@ class JeuxAttributs():
                     # astuce : attendre la fin de la boucle d'événement avant de recalculer la taille
                     QTimer.singleShot(0, self.dlg.adjustSize)
 
+    def inittableview_autre_valeur(self):
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(["Sous type", "Valeur"])
+        self.dlg_config_btn.tableView_autre_valeur.setModel(model)
+        # tableview en lecture seule
+        self.dlg_config_btn.tableView_autre_valeur.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        # selection de ligne entiere
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(QTableView.SelectRows)
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(QTableView.SingleSelection)
+
+    def actualise_autre_val(self):
+        # champ — val des "autres"
+        sstype_autre = self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentText()
+        attr_coche_autre = self.get_attrs_coches(self.dlg_sel_champ_val_AUTRE)
+
+        # c'est le model qui gere les ajouts, donc on récupère le model associé a la tableview'
+        model = self.dlg_config_btn.tableView_autre_valeur.model()
+
+        # Suppression de toutes les lignes correspondant au sstype sélectionné
+        # avant d'ajouter la ligne en cours.
+        # Car on a droit qu'à une seule ligne de valeur
+        # Parcourir les lignes en sens inverse (pour éviter le décalage d'index)
+        for row in reversed(range(model.rowCount())):
+            index = model.index(row, 0)  # 0 = première colonne
+            valeur = model.data(index)
+            if valeur == sstype_autre:
+                model.removeRow(row)
+
+        # si aucune valeur cochée, on n'ajoute rien
+        if not attr_coche_autre:
+            return
+
+        # mise à jour du tableview avec la selection
+        model.appendRow([QStandardItem(sstype_autre), QStandardItem(attr_coche_autre[0])])
+
+        # sauvegarde dans le dico
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            # [0] car on ne prend que le premier de la liste vu qu'on peut avoir
+            # qu'une seule valeur par sous type
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                # Exemple : mise à jour de l'icône du bouton
+                item["autre_valeur"] = self.convert_tableview_to_dico()
+                break
+        self.save_json()
+
+    # renvoie le contenu du tableview des sstype-valeur sous forme de dictionnaire
+    def convert_tableview_to_dico(self):
+        model = self.dlg_config_btn.tableView_autre_valeur.model()
+        data_dict = {}
+        for row in range(model.rowCount()):
+            # Première colonne : clé
+            key = model.data(model.index(row, 0))
+            # Deuxième colonne : valeur
+            value = model.data(model.index(row, 1))
+
+            if key:  # on évite les clés vides
+                data_dict[key] = value
+
+        return data_dict
 
     def actualise_btn(self):
-        sstype = self.dlg_selattributs.comboBoxchamps.currentText()
-        valeurs = self.get_attrs_coches()
+        sstype = self.dlg_sel_champ_val.comboBoxchamps.currentText()
+        valeurs = self.get_attrs_coches(self.dlg_sel_champ_val)
 
         # Initialise la clé avec une liste vide si absente
         self.dico_layer_attrval.setdefault(self.layer.name(), [])
-        champ_attr_a_suppr = {(sstype, attr) for attr in self.get_attrs_coches(False)}
+        champ_attr_a_suppr = {(sstype, attr) for attr in self.get_attrs_coches(self.dlg_sel_champ_val, False)}
 
         if self.layer.name() in self.dico_layer_attrval:
             self.dico_layer_attrval[self.layer.name()] = [
@@ -367,15 +606,6 @@ class JeuxAttributs():
             icon = item.get("icon", "")
             autre_valeur = item.get("autre_valeur", {})
 
-            # Compléter depuis l'ancien JSON si présent
-            if self.datajson and self.datajson.data:
-                for old_item in self.datajson.data.get(self.layer.name(), []):
-                    if old_item["sous_type"] == sous_type and old_item["valeur"] == valeur:
-                        icon = old_item.get("icon", icon)
-                        autre_valeur = old_item.get("autre_valeur", autre_valeur)
-                        nom_btn = old_item.get("nom_btn", nom_btn)
-                        break
-
             elements.append({
                 "sous_type": sous_type,
                 "valeur": valeur,
@@ -395,12 +625,14 @@ class JeuxAttributs():
             print(f"Erreur lors de la sauvegarde JSON : {e}")
 
     def load_json(self):
-        # self.datajson = JsonRead()
-        # data = self.datajson.charger_json(self.pathjson)
-        with open(self.pathjson, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if os.path.exists(self.pathjson):
+            with open(self.pathjson, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            print("Le fichier JSON n'existe pas.")
+            return
 
-        #  si c'est un recupere bien un dictionnaire issu du json
+        #  si on recupere bien un dictionnaire issu du json
         if not isinstance(data, dict):
             print("Format JSON incorrect : ce doit être un dictionnaire")
             return
@@ -439,12 +671,29 @@ class JeuxAttributs():
     def clic_btn(self,val,champ_courant):
         print(f"CLIC BOUTON ,champ courant - val = {champ_courant}-{val}")
         self.layer.startEditing()
+        # changement : champs-valeur du bouton selectionné
         id_champ = self.layer.fields().indexFromName(champ_courant)
         for sel in self.layer.selectedFeatures():
             self.layer.changeAttributeValue(sel.id(), id_champ,val)
 
+        # changement : champs-valeur des autres champ-valeur
+        # tooltip = self.clicked_button.toolTip()
+        # sstype, valeur = tooltip.split(SEPARATION_TOOLTIP)
+        autre_sstype_valeur = {}
+        # parcourt du dico pour ioler le dictionnaire des sstype_valeur à modifier
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+            if item.get("sous_type") == champ_courant and item.get("valeur") == val:
+                # Exemple : mise à jour du nom du bouton
+                autre_sstype_valeur = item["autre_valeur"]
+                break
+        # changement d'attributs dans le layer
+        for sel in self.layer.selectedFeatures():
+            for champ,valeur in autre_sstype_valeur.items():
+                id_champ = self.layer.fields().indexFromName(champ)
+                self.layer.changeAttributeValue(sel.id(),id_champ,valeur)
+
     def on_active_layer_changed(self,layer):
-        print("on_active_layer_changed")
+        # print("on_active_layer_changed")
         if not layer:
             self.layer = None
             return
@@ -455,19 +704,8 @@ class JeuxAttributs():
         self.load_json()
         self.ajout_btn_from_json()
 
-
-    def importer(self):
-        fichier, _ = QFileDialog.getOpenFileName(None,
-            "Sélectionner un fichier 'config.json'",
-            os.path.join(os.path.dirname(__file__)),"Fichier json (*.json)")
-
-    def exporter(self):
-        dossier = QFileDialog.getExistingDirectory(None,
-        "Sélectionner un répertoire de sauvegarde de la configuration")
-
     def initGui(self):
         pass
-
 
     def unload(self):
         try:
@@ -485,12 +723,36 @@ class JeuxAttributs():
 
         # libère références Python aux anciennes UI (si elles existent)
         self.dlg = None
-        self.dlg_selattributs = None
+        self.dlg_sel_champ_val = None
         self.layout_boutons = None
         self.liste_filtres = []
 
-        self.dlg_selattributs = QDialog()
-        loadUi(os.path.join(os.path.dirname(__file__), "choix_widgets.ui"), self.dlg_selattributs)
+        # chargement des ui
+        self.dlg_sel_champ_val = QDialog()
+        loadUi(os.path.join(os.path.dirname(__file__), "choix_widgets.ui"), self.dlg_sel_champ_val)
+        self.dlg_sel_champ_val_AUTRE = QDialog()
+        loadUi(os.path.join(os.path.dirname(__file__), "choix_widgets.ui"), self.dlg_sel_champ_val_AUTRE)
+        self.dlg_config_btn = QDialog()
+        loadUi(os.path.join(os.path.dirname(__file__), "conf_btn.ui"), self.dlg_config_btn)
+
+        # connexion des slots : self.dlg_sel_champ_val
+        self.dlg_sel_champ_val.pushButtonOk.clicked.connect(self.actualise_btn)
+        self.dlg_sel_champ_val.comboBoxchamps.currentTextChanged.connect(
+            lambda: self.change_champ(self.dlg_sel_champ_val))
+        self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentTextChanged.connect(
+            lambda: self.change_champ(self.dlg_sel_champ_val_AUTRE))
+        self.dlg_sel_champ_val_AUTRE.pushButtonOk.clicked.connect(self.actualise_autre_val)
+
+        # connexion des slots : self.dlg_config_btn
+        self.dlg_config_btn.pushButtonDeplacer.clicked.connect(self.deplace_btn)
+        # gestion de la suppression de la ligne selectionnée (valeur autre)
+        self.dlg_config_btn.pushButton_suppr_row.clicked.connect(self.suppr_ligne_tableview)
+        self.dlg_config_btn.pushButtonOk.clicked.connect(
+            lambda: self.valide_config_btn(self.sstype_btn_sel, self.valeur_btn_sel))
+        self.dlg_config_btn.pushButton_choix_autre_valeur.clicked.connect(self.choix_autre_valeur)
+        self.dlg_config_btn.spinBoxPosition.valueChanged.connect(self.spinbox_change)
+
+        self.inittableview_autre_valeur()
 
         # show the dialog
         self.dlg = QDialog()
@@ -511,12 +773,6 @@ class JeuxAttributs():
         except Exception:
             pass
         self.iface.layerTreeView().currentLayerChanged.connect(self.on_active_layer_changed)
-
-        # événement du dialog de choix des champs
-        self.dlg_selattributs.pushButtonOk.clicked.connect(self.actualise_btn)
-        self.dlg_selattributs.pushButtonImporter.clicked.connect(self.importer)
-        self.dlg_selattributs.pushButtonExporter.clicked.connect(self.exporter)
-        self.dlg_selattributs.comboBoxchamps.currentTextChanged.connect(self.change_champ)
 
         self.dlg.show()
 
