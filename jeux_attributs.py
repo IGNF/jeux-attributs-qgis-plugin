@@ -131,8 +131,11 @@ class JeuxAttributs:
         model.clear()
         for sstype_autre, valeur_autre in autre_sstype_valeur.items():
             model.appendRow([QStandardItem(sstype_autre), QStandardItem(valeur_autre)])
-        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(0, 200)
-        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(1, 100)
+        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(0, 150)
+        self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(1, 150)
+        model.setHeaderData(0, Qt.Horizontal, "Sous type")
+        model.setHeaderData(1, Qt.Horizontal, "Valeur")
+
 
         # ****************** config widget deplacement
         nb_btn_tolayer = len(self.dico_layer_attrval[self.layer.name()])
@@ -764,13 +767,16 @@ class JeuxAttributs:
         self.inittableview_autre_valeur()
 
         # show the dialog
-        self.dlg = QDialog()
+        self.dlg = QDialog(self.iface.mainWindow())
         self.dlg.setWindowTitle("Jeux d'attributs")
         self.dlg.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__),"icons" ,"icon_principal.png")))
-        self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint)
 
         self.layer = self.iface.activeLayer()
         self.layout_boutons = LayoutFluide(self.dlg)
+
+        self.dlg.setLayout(self.layout_boutons)
+
         self.initLayout()
         self.load_json()
         self.ajout_btn_from_json()

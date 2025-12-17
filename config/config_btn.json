@@ -34,5 +34,144 @@
         "etat_de_l_objet": "En projet"
       }
     }
+  ],
+  "troncon_de_route": [
+    {
+      "sous_type": "nature",
+      "valeur": "Sentier",
+      "nom_btn": "Sentier",
+      "icon": "Acces_interdit.ico",
+      "autre_valeur": {
+        "etat_de_l_objet": "En projet"
+      }
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Escalier",
+      "nom_btn": "Escalier",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Route à 1 chaussée",
+      "nom_btn": "Route à 1 chaussée",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Chemin",
+      "nom_btn": "Chemin",
+      "icon": "Acces_libre.ico",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Type autoroutier",
+      "nom_btn": "Type autoroutier",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Bac ou liaison maritime",
+      "nom_btn": "Bac ou liaison maritime",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Bretelle",
+      "nom_btn": "Bretelle",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Rond-point",
+      "nom_btn": "Rond-point",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Route empierrée",
+      "nom_btn": "Route empierrée",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "nature",
+      "valeur": "Route à 2 chaussées",
+      "nom_btn": "Route à 2 chaussées",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "itineraire_vert",
+      "valeur": "NULL",
+      "nom_btn": "NULL",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "itineraire_vert",
+      "valeur": "0",
+      "nom_btn": "0",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "itineraire_vert",
+      "valeur": "1",
+      "nom_btn": "1",
+      "icon": "",
+      "autre_valeur": {}
+    }
+  ],
+  "batiment": [
+    {
+      "sous_type": "usage_1",
+      "valeur": "Agricole",
+      "nom_btn": "Agricole",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "usage_1",
+      "valeur": "Indifférencié",
+      "nom_btn": "Indifférencié",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "usage_1",
+      "valeur": "Industriel",
+      "nom_btn": "Industriel",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "usage_1",
+      "valeur": "Religieux",
+      "nom_btn": "Religieux",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "usage_1",
+      "valeur": "Résidentiel",
+      "nom_btn": "Résidentiel",
+      "icon": "",
+      "autre_valeur": {}
+    },
+    {
+      "sous_type": "usage_1",
+      "valeur": "Sportif",
+      "nom_btn": "Sportif",
+      "icon": "",
+      "autre_valeur": {}
+    }
   ]
 }

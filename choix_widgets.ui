@@ -72,7 +72,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Sous_type</string>
+    <string>Champ</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
@@ -85,7 +85,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Champ</string>
+    <string>Valeurs</string>
    </property>
   </widget>
  </widget>
