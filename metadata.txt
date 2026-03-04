@@ -3,10 +3,10 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=(IGN) Jeux d'attributs
+name=IGN Jeux d'attributs
 qgisMinimumVersion=3.0
 description=Jeux d'attributs
-version=0.1
+version=0.2.0
 author=Gérôme PECHEUR (IGN)
 email=gerome.pecheur@ign.fr
 
