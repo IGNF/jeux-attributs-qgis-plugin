@@ -330,8 +330,8 @@ class JeuxAttributs:
         for field in self.layer.fields():
             index = self.layer.fields().indexOf(field.name())
             widget_type = self.get_type_champ(index)
+            # uniquement les listes de valeurs !! (pas de champs texte ...)
             if widget_type == "ValueMap":
-                # self.dlg_selattributs.comboBoxchamps.addItem(field.name())4
                 dlg.comboBoxchamps.addItem(field.name())
 
     # initialise toutes les valeurs en fonction du champ sélectionné
