@@ -6,12 +6,13 @@
 name=IGN Jeux d'attributs
 qgisMinimumVersion=3.0
 description=Jeux d'attributs
-version=0.2.0
+version=0.3.0
 author=Gérôme PECHEUR (IGN)
 email=gerome.pecheur@ign.fr
 
 about=Ce plugin permet la modification sémantique
 
+homepage=http://homepage
 tracker=http://bugs
 repository=http://repo
 # End of mandatory metadata
@@ -25,7 +26,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://homepage
+
 category=Plugins
 icon=icons/icon_principal.png
 # experimental flag
