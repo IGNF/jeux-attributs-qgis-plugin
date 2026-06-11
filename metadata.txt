@@ -5,10 +5,13 @@
 [general]
 name=IGN Jeux d'attributs
 qgisMinimumVersion=3.0
+qgisMaximumVersion=4.99
+
 description=Jeux d'attributs
 version=0.3.0
 author=Gérôme PECHEUR (IGN)
 email=gerome.pecheur@ign.fr
+license=GNU AGPL v3
 
 about=Ce plugin permet la modification sémantique
 

@@ -21,14 +21,16 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QObject, QEvent, QTimer
-from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView
-from PyQt5.uic import loadUi
+import webbrowser
+
+from qgis.PyQt.QtCore import QObject, QEvent, QTimer
+from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
+from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
+    QAbstractItemView, QTableView, QApplication,QFormLayout,QLabel
+from qgis.PyQt.uic import loadUi
 import json
 
-from qgis._core import QgsMessageLog, Qgis
+from .mapping_version import *
 
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
@@ -47,16 +49,53 @@ class FiltreClicDroit(QObject):
         if event.type() == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
             self.class_parent.show_dlg_config_btn(obj)
             return True  # on consomme l’événement (empêche le clic normal).
+
+        if event.type() == QEvent.MouseButtonPress and event.button() == LeftButton:
+            if isinstance(obj, QPushButton):
+                print("clic gauche sur un bouton, on prépare le déplacement")
+                self._dragging = False
+                self.widget_avant_move = obj
+                self._press_pos = event.pos()
+
+        if event.type() == QEvent.MouseMove:
+            if getattr(self, "_press_pos", None):
+                if (event.globalPos() - self._press_pos).manhattanLength() > QApplication.startDragDistance():
+                    if isinstance(obj, QPushButton):
+                        self._dragging = True
+                        self.class_parent.init_fantome_btn(event,obj)
+
+        if event.type() == QEvent.MouseButtonRelease and event.button() == LeftButton:
+            if getattr(self, "_dragging", False):
+                widget_apres_move = QApplication.widgetAt(event.globalPos())
+                if isinstance(obj, QPushButton):
+                    self.class_parent.relache_clic_gauche_btn(self.widget_avant_move, widget_apres_move)
+            self._dragging = False
+            self._press_pos = None
+            self.widget_avant_move = None
+            self.class_parent._ghost.hide()
         return False
 
 class JeuxAttributs:
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
+
+        # =====================================================
+        # image fantôme qui suit la souris lors du drag and drop des boutons
+        self._ghost = QLabel(None)
+        self._ghost.setWindowFlags(ToolTip | FramelessWindowHint)
+        self._ghost.setScaledContents(True)
+        self._ghost.setStyleSheet("""
+                    background-color: rgb(30, 144, 255);  /* bleu semi-transparent */
+                    border: 1px solid blue;
+                    padding: 1px;
+                """)
+        self._ghost.hide()
+
+
         # choix de l'icône
         self.button_ok = None
         self.listview = None
-        self.new_index_btn = None
 
         self.valeur_btn_sel = None
         self.sstype_btn_sel = None
@@ -85,6 +124,34 @@ class JeuxAttributs:
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
 
+    def init_fantome_btn(self, event, obj):
+        pix = obj.grab().scaled(obj.width(), obj.height())
+        self._ghost.setPixmap(pix)
+        self._ghost.move(event.globalPos() + QPoint(1, 1))
+        self._ghost.show()
+
+    def relache_clic_gauche_btn(self, obj, obj_sous_mouse):
+        pos_init = self.getposition_btn(obj)
+        pos_final = self.getposition_btn(obj_sous_mouse)
+        # si la position est en dehors du layout, on quitte
+        if pos_init is None or pos_final is None:
+            return
+        self.deplace_btn(pos_init, pos_final)
+
+    def getposition_btn(self, obj):
+        return self.layout_boutons.index_of_widget(obj)
+
+    def on_apropos(self):
+        dlgAProposDe = QDialog()
+        loadUi(os.path.dirname(__file__) + "/aproposde.ui", dlgAProposDe)
+        dlgAProposDe.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        dlgAProposDe.setWindowTitle("A propos de...")
+        dlgAProposDe.pushButtonAffichedoc.clicked.connect(self.affiche_doc)
+        dlgAProposDe.exec()
+
+    def affiche_doc(self):
+        webbrowser.open("https://a_definir")
+
     def show_dlg_config_btn(self,btn):
         self.clicked_button = btn
         # recuperation des infos du boutons cliqué grace au tooltip qui contient : sstype, valeur
@@ -92,7 +159,7 @@ class JeuxAttributs:
         self.sstype_btn_sel, self.valeur_btn_sel = tooltip.split(SEPARATION_TOOLTIP)
 
         self.dlg_config_btn.setWindowTitle("Paramétrage des boutons et des actions associés")
-        self.dlg_config_btn.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_config_btn.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
         # le nom est récupéré à partir du tooltip
         # car si l'icône est renseigné le bouton perd son nom
         self.dlg_config_btn.lineEditNomBtn.setText(btn.text())
@@ -136,12 +203,6 @@ class JeuxAttributs:
         model.setHeaderData(0, Qt.Horizontal, "Sous type")
         model.setHeaderData(1, Qt.Horizontal, "Valeur")
 
-
-        # ****************** config widget deplacement
-        nb_btn_tolayer = len(self.dico_layer_attrval[self.layer.name()])
-        self.dlg_config_btn.spinBoxPosition.setRange(1,nb_btn_tolayer)
-        self.dlg_config_btn.spinBoxPosition.setValue(self.getposbtn()+1)
-
         sstype_str = f"<span style='color: red'><b>{self.sstype_btn_sel}</b></span>"
         self.dlg_config_btn.label_ss_type.setText(sstype_str)
         valeur_str = f"<span style='color: red'><b>{self.valeur_btn_sel}</b></span>"
@@ -151,7 +212,6 @@ class JeuxAttributs:
         self.dlg_config_btn.radioButtonText.setChecked(True)
         self.dlg_config_btn.labelAvertissement.setText("")
 
-
         try:
             self.dlg_config_btn.pushButton_choix_icon.clicked.disconnect()
         except TypeError:
@@ -159,19 +219,8 @@ class JeuxAttributs:
         self.dlg_config_btn.pushButton_choix_icon.clicked.connect(lambda: self.choix_icone(self.sstype_btn_sel, self.valeur_btn_sel))
         self.dlg_config_btn.lineEditNomBtn.textChanged.connect(self.nom_btn_change)
 
-        self.dlg_config_btn.exec_()
+        self.dlg_config_btn.exec()
 
-    def getposbtn(self):
-        index_btn_sel = next(
-            (i for i, item in enumerate(self.dico_layer_attrval[self.layer.name()])
-             if item["sous_type"] == self.sstype_btn_sel and item["valeur"] == self.valeur_btn_sel),
-            None
-        )
-        # (+1) la premiere position est 1, pas 0
-        return index_btn_sel
-
-    def spinbox_change(self, value):
-        self.new_index_btn = value
 
     def suppr_ligne_tableview(self):
         # recuperation de la selection
@@ -193,22 +242,47 @@ class JeuxAttributs:
                 break
         self.save_json()
 
-    def deplace_btn(self):
-        # print("deplace a l'index : index = ",self.new_index_btn)
+    def deplace_btn(self,old_position,new_position):
+        print(f"deplace de {old_position} vers {new_position}")
         dico_avant = self.dico_layer_attrval[self.layer.name()]
 
-        # arrangement du dico "-1" car la premiere position est à 0 et non 1
-        new_index = self.new_index_btn -1
-        # recuperation de la position du bouton sélectionné à partir du json
-        index_btn_sel = self.getposbtn()
-        # Échange des deux positions
-        dico_avant[new_index], dico_avant[index_btn_sel] = (
-            dico_avant[index_btn_sel],
-            dico_avant[new_index],
-        )
-        # sauvegarde
-        self.dico_layer_attrval[self.layer.name()] = dico_avant
+        # si on deplace sur le premier btn (configuration) on le place juste apres.
+        if new_position == 0:
+            new_position = 1
+
+        # conversion en index Python (0-based)
+        old_idx = old_position - 1
+        new_idx = new_position - 1
+
+        # retire élément déplacé de la liste et le stocke temporairement
+        item = dico_avant.pop(old_idx)
+
+        # si on déplace vers la droite,
+        # le pop() a déjà décalé les indices
+        if old_idx < new_idx:
+            new_idx -= 1
+
+        # insertion AVANT le bouton cible
+        dico_avant.insert(new_idx, item)
+
+        # dico_avant[new_position-1], dico_avant[old_position-1] = (
+        #     dico_avant[old_position-1],
+        #     dico_avant[new_position-1],
+        # )
+        # # sauvegarde
+        # self.dico_layer_attrval[self.layer.name()] = dico_avant
+
         self.save_json()
+
+        # actualisation interface
+        # rafraîchissement de l'interface
+        self.clear_layout(self.layout_boutons)
+        self.liste_filtres = []
+        self.initLayout()
+        self.load_json()
+        self.ajout_btn_from_json()
+
+        self.dlg.adjustSize()
 
     def nom_btn_change(self):
         if self.dlg_config_btn.lineEditNomBtn.text() != "":
@@ -249,7 +323,7 @@ class JeuxAttributs:
         self.dlg_sel_champ_val_AUTRE.comboBoxchamps.clear()
         self.dlg_sel_champ_val_AUTRE.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
-        self.dlg_sel_champ_val_AUTRE.exec_()
+        self.dlg_sel_champ_val_AUTRE.exec()
 
     def valide_nom_btn(self,sstype,valeur):
         for item in self.dico_layer_attrval.get(self.layer.name(), []):
@@ -299,7 +373,7 @@ class JeuxAttributs:
 
         self.init_listview_icones()
 
-        self.dlg_icon.exec_()
+        self.dlg_icon.exec()
 
     def init_listview_icones(self):
         self.model = QStandardItemModel()
@@ -400,7 +474,7 @@ class JeuxAttributs:
         self.dlg_sel_champ_val.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val)
         self.dlg_sel_champ_val.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
-        self.dlg_sel_champ_val.exec_()
+        self.dlg_sel_champ_val.exec()
 
     def change_champ(self,dlg):
         dlg.listattributs.clear()
@@ -754,15 +828,16 @@ class JeuxAttributs:
         self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentTextChanged.connect(
             lambda: self.change_champ(self.dlg_sel_champ_val_AUTRE))
         self.dlg_sel_champ_val_AUTRE.pushButtonOk.clicked.connect(self.actualise_autre_val)
+        self.dlg_sel_champ_val.pushButton_apropos.clicked.connect(self.on_apropos)
 
         # connexion des slots : self.dlg_config_btn
-        self.dlg_config_btn.pushButtonDeplacer.clicked.connect(self.deplace_btn)
+        # self.dlg_config_btn.pushButtonDeplacer.clicked.connect(self.deplace_btn)
         # gestion de la suppression de la ligne selectionnée (valeur autre)
         self.dlg_config_btn.pushButton_suppr_row.clicked.connect(self.suppr_ligne_tableview)
         self.dlg_config_btn.pushButtonOk.clicked.connect(
             lambda: self.valide_config_btn(self.sstype_btn_sel, self.valeur_btn_sel))
         self.dlg_config_btn.pushButton_choix_autre_valeur.clicked.connect(self.choix_autre_valeur)
-        self.dlg_config_btn.spinBoxPosition.valueChanged.connect(self.spinbox_change)
+
 
         self.inittableview_autre_valeur()
 
