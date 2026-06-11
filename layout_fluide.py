@@ -10,6 +10,12 @@ class LayoutFluide(QLayout):
         self.itemList = []
         self.largeur_max_ligne = largeur_max_ligne  # limite de largeur avant retour à la ligne
 
+    def index_of_widget(self, widget):
+        for i, item in enumerate(self.itemList):
+            if item.widget() == widget:
+                return i
+        return None
+
     def addItem(self, item):
         self.itemList.append(item)
 
