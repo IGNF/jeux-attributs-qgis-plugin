@@ -1,3 +1,5 @@
+
+
 <table>
 <colgroup>
 <col style="width: 21%" />
@@ -8,51 +10,60 @@
 <td rowspan="2"><img src="images/image1.jpeg"
 style="width:1.38681in;height:1.47153in"
 alt="logo_IGN_pour_lettre" /></td>
-<td style="text-align: center;"><p><strong>Manuel utilisateur du
-plugin</strong></p>
-<p><strong>« jeux d’attributs »</strong></p>
+<td style="font-size: 24px;text-align: center;"><p><strong>Manuel utilisateur du plugin
+« Jeux d’attributs »</strong></p>
 <p><strong>V0.3.0</strong></p></td>
 </tr>
 <tr>
-<td style="text-align: center;"></td>
+<td style="font-size: 16px;text-align: center;">Développeur  : Gérôme PECHEUR (IGN)</td>
 </tr>
 </tbody>
 </table>
 
-**Sommaire**
+## Sommaire
 
-[1 Prérequis [1](#prérequis)](#prérequis)
+- [1. Prérequis](#prerequis)
 
-[2 Résumé [1](#résumé)](#résumé)
+- [2. Résumé](#resume)
 
-[3 Installation [1](#installation)](#installation)
+- [3. Installation](#installation)
 
-[4 Présentation [2](#présentation)](#présentation)
+- [4. Présentation](#presentation)
 
-[5 Configuration [2](#configuration)](#configuration)
+ - [5. Configuration](#configuration)
 
-[6 Utilisation [4](#utilisation)](#utilisation)
+ - [6. Utilisation](#utilisation)
 
-[7 A propos [4](#a-propos)](#a-propos)
+ - [7. A propos](#a-propos)
 
-# 
 
-# Prérequis
+
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="prerequis" style="color: white;margin:0;" >1. Prérequis</h2>
+</div>
+
 
 Version de QGIS : 3.28 ou supérieur, y compris QGIS4
 
-Le plugin maitre doit être installé.
+Le plugin « maitre » doit préalablement être installé : 
+[maitre-qgis-plugin sur GitHub](https://github.com/IGNF/maitre-qgis-plugin)
 
-# Résumé
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="resume" style="color: white;margin:0;" >2. Résumé</h2>
+</div>
 
 Ce plugin facilite la modification des attributs des entités.
 
-# Installation
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="installation" style="color: white;margin:0;" >3. Installation</h2>
+</div>
 
 Le plugin s’installe soit en chargeant le zip dans QGIS, soit en lançant
 l’exécutable d’installation : (\*\_PluginIGN_Installer.exe).
 
-# Présentation
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="presentation" style="color: white;margin:0;" >4. Présentation</h2>
+</div>
 
 A l’ouverture du plugin on obtient :
 
@@ -66,7 +77,9 @@ Exemple après configuration :
 <img src="images/image3.png"
 style="width:6.83889in;height:0.66111in" />
 
-# Configuration
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="configuration" style="color: white;margin:0;" >5. Configuration</h2>
+</div>
 
 <img src="images/image4.png"
 style="width:0.2292in;height:0.2292in" /> : Permet de configurer la
@@ -126,7 +139,10 @@ style="width:2.76232in;height:2.37402in" />
 Répétez l’opération pour chaque bouton et pour chaque couche, si
 nécessaire.
 
-# Utilisation
+ 
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="utilisation" style="color: white;margin:0;" >6. Utilisation</h2>
+</div>
 
 Il est possible de réorganiser l’ordre des boutons par simple
 glissé-déposé.
@@ -144,11 +160,10 @@ Dans QGIS, après la sélection d’une ou de plusieurs entités, l’appui sur
 un bouton entraîne la modification sémantique correspondant à la
 configuration du bouton activé.
 
-# 
 
-# 
-
-# A propos
+<div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="a-propos" style="color: white;margin:0;" >7. A propos</h2>
+</div>
 
 Accessible via <img src="images/image4.png"
 style="width:0.2292in;height:0.2292in" /> puis
