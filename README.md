@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# jeux-attributs-qgis-plugin
-modifications sémantiques
-=======
-
 
 # IGN_jeux_attributs
 
@@ -36,4 +31,4 @@ User documentation : https://ignf.github.io/jeux-attributs-qgis-plugin/
 ## Licence
 
 GNU AGPL v3
->>>>>>> 0.3.0
+
