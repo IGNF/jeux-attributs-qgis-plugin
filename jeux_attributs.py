@@ -52,7 +52,6 @@ class FiltreClicDroit(QObject):
 
         if event.type() == QEvent.MouseButtonPress and event.button() == LeftButton:
             if isinstance(obj, QPushButton):
-                print("clic gauche sur un bouton, on prépare le déplacement")
                 self._dragging = False
                 self.widget_avant_move = obj
                 self._press_pos = event.pos()
@@ -154,9 +153,9 @@ class JeuxAttributs:
 
     def show_dlg_config_btn(self,btn):
         self.clicked_button = btn
-        # recuperation des infos du boutons cliqué grace au tooltip qui contient : sstype, valeur
-        tooltip = self.clicked_button.toolTip()
-        self.sstype_btn_sel, self.valeur_btn_sel = tooltip.split(SEPARATION_TOOLTIP)
+        # recuperation des infos du bouton cliqué
+        self.sstype_btn_sel = btn.property("sstype")
+        self.valeur_btn_sel = btn.property("valeur")
 
         self.dlg_config_btn.setWindowTitle("Paramétrage des boutons et des actions associés")
         self.dlg_config_btn.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
@@ -209,7 +208,6 @@ class JeuxAttributs:
         self.dlg_config_btn.label_valeur.setText(valeur_str)
         self.dlg_config_btn.label_fleche.setText(SEPARATION_TOOLTIP)
 
-        self.dlg_config_btn.radioButtonText.setChecked(True)
         self.dlg_config_btn.labelAvertissement.setText("")
 
         try:
@@ -243,7 +241,6 @@ class JeuxAttributs:
         self.save_json()
 
     def deplace_btn(self,old_position,new_position):
-        print(f"deplace de {old_position} vers {new_position}")
         dico_avant = self.dico_layer_attrval[self.layer.name()]
 
         # si on deplace sur le premier btn (configuration) on le place juste apres.
@@ -265,13 +262,6 @@ class JeuxAttributs:
         # insertion AVANT le bouton cible
         dico_avant.insert(new_idx, item)
 
-        # dico_avant[new_position-1], dico_avant[old_position-1] = (
-        #     dico_avant[old_position-1],
-        #     dico_avant[new_position-1],
-        # )
-        # # sauvegarde
-        # self.dico_layer_attrval[self.layer.name()] = dico_avant
-
         self.save_json()
 
         # actualisation interface
@@ -289,27 +279,13 @@ class JeuxAttributs:
             self.dlg_config_btn.labelAvertissement.setText("")
 
     def valide_config_btn(self,sstype,valeur):
-        # print(f"valide_config_btn : {sstype}, {valeur}")
-        self.valide_nom_btn(sstype,valeur)
+        # self.valide_nom_btn(sstype,valeur)
+        self.valide_nom_et_icone(sstype, valeur)
 
-        if self.dlg_config_btn.radioButtonText.isChecked():
-            if self.dlg_config_btn.lineEditNomBtn.text() == "":
-                self.dlg_config_btn.labelAvertissement.setText("<span style='color: red'><b>Le nom du bouton est vide</b></span>")
-                return
-            else:
-                self.clicked_button.setText(self.dlg_config_btn.lineEditNomBtn.text())
-                # self.clicked_button.setIcon(QIcon())
-                # self.clicked_button.adjustSize()
+        if self.dlg_config_btn.lineEditNomBtn.text() == "" and not self.pathiconbtnclicked:
+            self.dlg_config_btn.labelAvertissement.setText("<span style='color: red'><b>Le bouton doit avoir un nom OU/ET une icône</b></span>")
+            return
 
-        elif self.dlg_config_btn.radioButtonIcon.isChecked():
-            if self.pathiconbtnclicked is None:
-                self.dlg_config_btn.labelAvertissement.setText(
-                    "<span style='color: red'><b>Aucune icône n'est sélectionnée</b></span>")
-                return
-            else:
-                self.clicked_button.setText("")
-                self.clicked_button.setIcon(QIcon(self.pathiconbtnclicked))
-            # self.clicked_button.setFixedWidth(20)
         self.save_json()
         self.clear_layout(self.layout_boutons)
         self.liste_filtres = []
@@ -325,12 +301,21 @@ class JeuxAttributs:
         self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
         self.dlg_sel_champ_val_AUTRE.exec()
 
-    def valide_nom_btn(self,sstype,valeur):
+    # def valide_nom_btn(self,sstype,valeur):
+    #     for item in self.dico_layer_attrval.get(self.layer.name(), []):
+    #         if item.get("sous_type") == sstype and item.get("valeur") == valeur:
+    #             # mise à jour du nom du bouton
+    #             item["nom_btn"] = self.dlg_config_btn.lineEditNomBtn.text()
+    #             break
+    def valide_nom_et_icone(self, sstype, valeur):
         for item in self.dico_layer_attrval.get(self.layer.name(), []):
             if item.get("sous_type") == sstype and item.get("valeur") == valeur:
-                # Exemple : mise à jour du nom du bouton
                 item["nom_btn"] = self.dlg_config_btn.lineEditNomBtn.text()
+                item["icon"] = self.dlg_config_btn.lineEdit_icone.text().strip()
                 break
+            if not item["nom_btn"] and not item["icon"]:
+                return False
+        return True
 
     def valide_icone(self,sstype,valeur):
         # sauvegarde de l'icon le dictionnaire
@@ -339,19 +324,21 @@ class JeuxAttributs:
             self.dlg_config_btn.lineEdit_icone.setText(filico)
         else:
             filico = ""
-        # ajout de l'icone dans le dictionnaire et suppression du nom
+        # ajout de l'icone dans le dictionnaire
         for item in self.dico_layer_attrval.get(self.layer.name(), []):
             if item.get("sous_type") == sstype and item.get("valeur") == valeur:
-                # Exemple : mise à jour de l'icône du bouton
+                # mise à jour de l'icône du bouton
                 item["icon"] = filico
                 # item["nom_btn"] = ""
                 break
-        # on actualise l'icone a afficher apres le nom de l'icone
-        # path = os.path.join(self.path_repicon_btn, icon_str)
+
+
+        # on actualise l'icône à afficher apres le nom de l'icône
         pixmap = QPixmap(self.pathiconbtnclicked)
         pixmap = pixmap.scaled(20, 20, KeepAspectRatio, SmoothTransformation)
         self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
+    # on a choisi une icone
     def valide_dlg_icone(self,sstype,valeur):
         self.valide_icone(sstype, valeur)
         self.dlg_icon.close()
@@ -534,6 +521,14 @@ class JeuxAttributs:
         # Aucun match trouvé → retourne une chaîne vide
         return ""
 
+    def get_autre_val_from_dico(self,layer,sous_type,valeur):
+        elements = self.dico_layer_attrval.get(layer, [])
+        for item in elements:
+            if item.get("sous_type") == sous_type and item.get("valeur") == valeur:
+                return item.get("autre_valeur", "")
+        # Aucun match trouvé → retourne une chaîne vide
+        return ""
+
     def ajout_btn_from_json(self):
         self.liste_filtres = []
         for layer in self.dico_layer_attrval.keys():
@@ -544,12 +539,21 @@ class JeuxAttributs:
                     path_icon = os.path.join(self.path_repicon_btn, iconstr)
                     nom_json = self.get_nombtn_from_dico(self.layer.name(),sstype,valeur)
                     widget = QPushButton(valeur)
+                    # stockage des infos dans le bouton (sstype, valeur)
+                    widget.setProperty("sstype", sstype)
+                    widget.setProperty("valeur", valeur)
+
                     # initialisation du filtre clic droit
                     filtre = FiltreClicDroit(self)
                     self.liste_filtres.append(filtre)
                     widget.installEventFilter(filtre)
 
-                    widget.setToolTip(f"{sstype}{SEPARATION_TOOLTIP}{valeur}")
+                    # formatage du tooltip
+                    autre_valeur = self.get_autre_val_from_dico(self.layer.name(),sstype,valeur)
+                    text_tooltip = f"{sstype}{SEPARATION_TOOLTIP}{valeur}\n"
+                    text_tooltip += self.format_tooltip(autre_valeur)
+
+                    widget.setToolTip(text_tooltip)
 
                     # widget.setFixedWidth(button_width)
                     widget.setFixedHeight(20)
@@ -570,6 +574,16 @@ class JeuxAttributs:
                     self.layout_boutons.activate()
                     # astuce : attendre la fin de la boucle d'événement avant de recalculer la taille
                     QTimer.singleShot(0, self.dlg.adjustSize)
+
+    #   formatage du tooltip avec valeur (str) + autre_valeur (liste)
+    def format_tooltip(self,autre_valeur):
+        tooltip = ""
+        for attr,val in autre_valeur.items():
+            tooltip += attr
+            tooltip += SEPARATION_TOOLTIP
+            tooltip += val
+            tooltip += "\n"
+        return tooltip
 
     def inittableview_autre_valeur(self):
         model = QStandardItemModel()
@@ -683,8 +697,8 @@ class JeuxAttributs:
             except json.JSONDecodeError:
                 print("Fichier JSON corrompu, un nouveau sera créé.")
                 config = {}
-        elements = []
 
+        elements = []
         for item in self.dico_layer_attrval.get(self.layer.name(), []):
             sous_type = item.get("sous_type")
             valeur = item.get("valeur")
@@ -755,7 +769,6 @@ class JeuxAttributs:
             self.dico_layer_attrval[layer_name] = cleaned_elements
 
     def clic_btn(self,val,champ_courant):
-        print(f"CLIC BOUTON ,champ courant - val = {champ_courant}-{val}")
         self.layer.startEditing()
         # changement : champs-valeur du bouton selectionné
         id_champ = self.layer.fields().indexFromName(champ_courant)
@@ -779,7 +792,6 @@ class JeuxAttributs:
                 self.layer.changeAttributeValue(sel.id(),id_champ,valeur)
 
     def on_active_layer_changed(self,layer):
-        # print("on_active_layer_changed")
         if not layer:
             self.layer = None
             return

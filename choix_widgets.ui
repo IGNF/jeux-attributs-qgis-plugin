@@ -38,7 +38,7 @@
      <item row="5" column="1">
       <widget class="QPushButton" name="pushButtonOk">
        <property name="text">
-        <string>Actualiser</string>
+        <string>Ajouter</string>
        </property>
       </widget>
      </item>
