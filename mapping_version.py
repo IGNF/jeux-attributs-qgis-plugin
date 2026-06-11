@@ -11,8 +11,10 @@ try :
     WindowTitleHint = Qt.WindowType.WindowTitleHint
     WindowStaysOnTopHint = Qt.WindowType.WindowStaysOnTopHint
     FramelessWindowHint = Qt.WindowType.FramelessWindowHint
-    # Checked = Qt.CheckState.Checked
-    # Unchecked = Qt.CheckState.Unchecked
+    KeepAspectRatio = Qt.AspectRatioMode.KeepAspectRatio
+    SmoothTransformation = Qt.TransformationMode.SmoothTransformation
+    Checked = Qt.CheckState.Checked
+    Unchecked = Qt.CheckState.Unchecked
     # ItemIsEnabled = Qt.ItemFlag.ItemIsEnabled
     # ItemIsUserCheckable = Qt.ItemFlag.ItemIsUserCheckable
     # MatchExactly = Qt.MatchFlag.MatchExactly
@@ -26,7 +28,7 @@ try :
     # NoFocus = Qt.FocusPolicy.NoFocus
     # DisplayRole = Qt.ItemDataRole.DisplayRole
     # BackgroundRole = Qt.ItemDataRole.BackgroundRole
-    # RightButton = Qt.MouseButton.RightButton
+    RightButton = Qt.MouseButton.RightButton
     MiddleButton = Qt.MouseButton.MiddleButton
     LeftButton = Qt.MouseButton.LeftButton
     # NoContextMenu = Qt.ContextMenuPolicy.NoContextMenu
@@ -39,6 +41,7 @@ try :
     CrossCursor = Qt.CursorShape.CrossCursor
     ArrowCursor = Qt.CursorShape.ArrowCursor
     red = Qt.GlobalColor.red
+    Horizontal = Qt.Orientation.Horizontal
 
 
 # QT5
@@ -51,8 +54,10 @@ except :
     WindowTitleHint = Qt.WindowTitleHint
     WindowStaysOnTopHint = Qt.WindowStaysOnTopHint
     FramelessWindowHint = Qt.FramelessWindowHint
-    # Checked = Qt.Checked
-    # Unchecked = Qt.Unchecked
+    KeepAspectRatio = Qt.KeepAspectRatio
+    SmoothTransformation = Qt.SmoothTransformation
+    Checked = Qt.Checked
+    Unchecked = Qt.Unchecked
     # ItemIsEnabled = Qt.ItemIsEnabled
     # ItemIsUserCheckable = Qt.ItemIsUserCheckable
     # MatchExactly = Qt.MatchFlag.MatchExactly
@@ -66,7 +71,7 @@ except :
     # NoFocus = Qt.NoFocus
     # DisplayRole = Qt.DisplayRole
     # BackgroundRole = Qt.BackgroundRole
-    # RightButton = Qt.RightButton
+    RightButton = Qt.RightButton
     MiddleButton = Qt.MiddleButton
     LeftButton = Qt.LeftButton
     # NoContextMenu = Qt.NoContextMenu
@@ -79,3 +84,4 @@ except :
     CrossCursor = Qt.CrossCursor
     ArrowCursor = Qt.ArrowCursor
     red = Qt.red
+    Horizontal = Qt.Horizontal

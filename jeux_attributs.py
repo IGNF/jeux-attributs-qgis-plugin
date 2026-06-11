@@ -26,7 +26,7 @@ import webbrowser
 from qgis.PyQt.QtCore import QObject, QEvent, QTimer
 from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView, QApplication,QFormLayout,QLabel
+    QAbstractItemView, QTableView, QApplication,QLabel
 from qgis.PyQt.uic import loadUi
 import json
 
@@ -46,7 +46,7 @@ class FiltreClicDroit(QObject):
         self.class_parent = class_parent
 
     def eventFilter(self,obj,event):
-        if event.type() == QEvent.MouseButtonPress and event.button() == Qt.RightButton:
+        if event.type() == QEvent.MouseButtonPress and event.button() == RightButton:
             self.class_parent.show_dlg_config_btn(obj)
             return True  # on consomme l’événement (empêche le clic normal).
 
@@ -183,7 +183,7 @@ class JeuxAttributs:
         self.dlg_config_btn.lineEdit_icone.setText(icon_str)
         path = os.path.join(self.path_repicon_btn,icon_str)
         pixmap = QPixmap(path)
-        pixmap = pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(20, 20, KeepAspectRatio, SmoothTransformation)
         self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
         # ***************AUTRE VALEUR*********************
@@ -200,8 +200,8 @@ class JeuxAttributs:
             model.appendRow([QStandardItem(sstype_autre), QStandardItem(valeur_autre)])
         self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(0, 150)
         self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(1, 150)
-        model.setHeaderData(0, Qt.Horizontal, "Sous type")
-        model.setHeaderData(1, Qt.Horizontal, "Valeur")
+        model.setHeaderData(0, Horizontal, "Sous type")
+        model.setHeaderData(1, Horizontal, "Valeur")
 
         sstype_str = f"<span style='color: red'><b>{self.sstype_btn_sel}</b></span>"
         self.dlg_config_btn.label_ss_type.setText(sstype_str)
@@ -319,7 +319,7 @@ class JeuxAttributs:
         self.dlg_config_btn.close()
 
     def choix_autre_valeur(self):
-        self.dlg_sel_champ_val_AUTRE.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_sel_champ_val_AUTRE.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
         self.dlg_sel_champ_val_AUTRE.comboBoxchamps.clear()
         self.dlg_sel_champ_val_AUTRE.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
@@ -349,7 +349,7 @@ class JeuxAttributs:
         # on actualise l'icone a afficher apres le nom de l'icone
         # path = os.path.join(self.path_repicon_btn, icon_str)
         pixmap = QPixmap(self.pathiconbtnclicked)
-        pixmap = pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(20, 20, KeepAspectRatio, SmoothTransformation)
         self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
     def valide_dlg_icone(self,sstype,valeur):
@@ -361,7 +361,7 @@ class JeuxAttributs:
         self.dlg_icon = QDialog()
         self.dlg_icon.setWindowTitle("Choisir une icône...")
         self.dlg_icon.setWindowIcon(QIcon(self.pathicon_interface))
-        self.dlg_icon.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_icon.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
         layout = QVBoxLayout()
         self.listview = QListView()
         self.button_ok = QPushButton("Valider")
@@ -440,10 +440,10 @@ class JeuxAttributs:
 
         for val in valeurs_possibles:
             item = QListWidgetItem(val)
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Unchecked)
             if dlg == self.dlg_sel_champ_val:
                 if (champ,val) in list_sstype_val:
-                    item.setCheckState(Qt.Checked)
+                    item.setCheckState(Checked)
             dlg.listattributs.addItem(item)
             if dlg == self.dlg_sel_champ_val_AUTRE:
                 self.dlg_sel_champ_val_AUTRE.listattributs.itemChanged.connect(self.on_item_changed)
@@ -460,9 +460,9 @@ class JeuxAttributs:
     def get_attrs_coches(self,dlg,coche = True):
         val_coche = []
         if coche:
-            bcoche = Qt.Checked
+            bcoche = Checked
         else:
-            bcoche = Qt.Unchecked
+            bcoche = Unchecked
         for i in range(dlg.listattributs.count()):
             item = dlg.listattributs.item(i)
             if item.checkState() == bcoche:
@@ -473,7 +473,7 @@ class JeuxAttributs:
         self.dlg_sel_champ_val.comboBoxchamps.clear()
         self.dlg_sel_champ_val.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val)
-        self.dlg_sel_champ_val.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
+        self.dlg_sel_champ_val.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
         self.dlg_sel_champ_val.exec()
 
     def change_champ(self,dlg):
@@ -845,7 +845,7 @@ class JeuxAttributs:
         self.dlg = QDialog(self.iface.mainWindow())
         self.dlg.setWindowTitle("Jeux d'attributs")
         self.dlg.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__),"icons" ,"icon_principal.png")))
-        self.dlg.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint)
+        self.dlg.setWindowFlags(Window | WindowCloseButtonHint)
 
         self.layer = self.iface.activeLayer()
         self.layout_boutons = LayoutFluide(self.dlg)
