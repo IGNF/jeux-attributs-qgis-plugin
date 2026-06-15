@@ -26,7 +26,7 @@ import webbrowser
 from qgis.PyQt.QtCore import QObject, QEvent, QTimer
 from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel,QIntValidator
 from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView, QApplication,QLabel,QLineEdit
+    QAbstractItemView, QTableView, QApplication,QLabel,QWidget
 from qgis.PyQt.uic import loadUi
 import json
 
@@ -219,6 +219,31 @@ class JeuxAttributs:
 
         self.dlg_config_btn.exec()
 
+    def suppr_btn(self,sstype,valeur):
+        print(f"supp btn : {sstype}-{valeur}")
+        # suppression dans le dictionnaire
+        if self.layer.name() in self.dico_layer_attrval:
+            self.dico_layer_attrval[self.layer.name()] = [
+                item for item in self.dico_layer_attrval[self.layer.name()]
+                if not (
+                        item.get("sous_type") == sstype and
+                        item.get("valeur") == valeur
+                )
+            ]
+        # sauvegarde json
+        self.save_json()
+        # fermeture de la fenêtre de configuration
+        self.dlg_config_btn.close()
+
+        # reconstruction complète de l'interface
+        self.clear_layout(self.layout_boutons)
+        self.liste_filtres = []
+
+        self.initLayout()
+        self.load_json()
+        self.ajout_btn_from_json()
+
+        self.dlg.adjustSize()
 
     def suppr_ligne_tableview(self):
         # recuperation de la selection
@@ -828,8 +853,11 @@ class JeuxAttributs:
         if self.first_start:
             self.first_start = False
 
+
+        if self.dlg is not None and self.dlg.isVisible():
+            return
         # libère références Python aux anciennes UI (si elles existent)
-        self.dlg = None
+
         self.dlg_sel_champ_val = None
         self.layout_boutons = None
         self.liste_filtres = []
@@ -858,7 +886,7 @@ class JeuxAttributs:
         self.dlg_config_btn.pushButtonOk.clicked.connect(
             lambda: self.valide_config_btn(self.sstype_btn_sel, self.valeur_btn_sel))
         self.dlg_config_btn.pushButton_choix_autre_valeur.clicked.connect(self.choix_autre_valeur)
-
+        self.dlg_config_btn.pushButton_suppr_btn.clicked.connect(lambda : self.suppr_btn(self.sstype_btn_sel,self.valeur_btn_sel))
 
         self.inittableview_autre_valeur()
 
