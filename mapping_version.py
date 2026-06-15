@@ -15,6 +15,9 @@ try :
     SmoothTransformation = Qt.TransformationMode.SmoothTransformation
     Checked = Qt.CheckState.Checked
     Unchecked = Qt.CheckState.Unchecked
+    ItemIsEditable = Qt.ItemFlag.ItemIsEditable
+    ItemIsEnabled = Qt.ItemFlag.ItemIsEnabled
+    ItemIsSelectable = Qt.ItemFlag.ItemIsSelectable
     # ItemIsEnabled = Qt.ItemFlag.ItemIsEnabled
     # ItemIsUserCheckable = Qt.ItemFlag.ItemIsUserCheckable
     # MatchExactly = Qt.MatchFlag.MatchExactly
@@ -58,6 +61,9 @@ except :
     SmoothTransformation = Qt.SmoothTransformation
     Checked = Qt.Checked
     Unchecked = Qt.Unchecked
+    ItemIsEditable = Qt.ItemIsEditable
+    ItemIsEnabled = Qt.ItemIsEnabled
+    ItemIsSelectable = Qt.ItemIsSelectable
     # ItemIsEnabled = Qt.ItemIsEnabled
     # ItemIsUserCheckable = Qt.ItemIsUserCheckable
     # MatchExactly = Qt.MatchFlag.MatchExactly

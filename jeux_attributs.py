@@ -220,7 +220,6 @@ class JeuxAttributs:
         self.dlg_config_btn.exec()
 
     def suppr_btn(self,sstype,valeur):
-        print(f"supp btn : {sstype}-{valeur}")
         # suppression dans le dictionnaire
         if self.layer.name() in self.dico_layer_attrval:
             self.dico_layer_attrval[self.layer.name()] = [
@@ -304,7 +303,6 @@ class JeuxAttributs:
             self.dlg_config_btn.labelAvertissement.setText("")
 
     def valide_config_btn(self,sstype,valeur):
-        # self.valide_nom_btn(sstype,valeur)
         self.valide_nom_et_icone(sstype, valeur)
 
         if self.dlg_config_btn.lineEditNomBtn.text() == "" and not self.pathiconbtnclicked:
@@ -413,9 +411,7 @@ class JeuxAttributs:
             if widget_type == "ValueMap":
                 dlg.comboBoxchamps.addItem(field.name())
             elif widget_type == "TextEdit" and field.name() not in CHAMPS_IGNORE:
-                print("field = ",field.name())
                 dlg.comboBoxchamps.addItem(field.name())
-                # print(f"Champ {field.name()} ignoré car type d’éditeur : {widget_type}")
 
     # initialise toutes les valeurs en fonction du champ sélectionné
     def init_list_valeur(self,champ,dlg):
@@ -431,9 +427,8 @@ class JeuxAttributs:
 
         # CAS TEXTEDIT -> une seule entrée éditable
         if editor_setup.type() == "TextEdit":
-            print("champ = ",champ,"type textedit")
-            item = QListWidgetItem("Saisir une valeur...")
-            item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            item = QListWidgetItem(TXT_SAISIR_VAL)
+            item.setFlags(item.flags() | ItemIsEditable | ItemIsEnabled | ItemIsSelectable)
             dlg.listattributs.addItem(item)
             return
 
@@ -682,6 +677,10 @@ class JeuxAttributs:
             for i in range(self.dlg_sel_champ_val.listattributs.count()):
                 item = self.dlg_sel_champ_val.listattributs.item(i)
                 if item.flags() & Qt.ItemIsEditable:
+                    if item.text() ==TXT_SAISIR_VAL:
+                        QMessageBox.warning(self.dlg_sel_champ_val,"Avertissement","veuillez saisir une valeur")
+                        return
+                    print("textedit = ",item.text())
                     valeurs.append(item.text())
 
         # Initialise la clé avec une liste vide si absente
