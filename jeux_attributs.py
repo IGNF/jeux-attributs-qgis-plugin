@@ -26,7 +26,7 @@ import webbrowser
 from qgis.PyQt.QtCore import QObject, QEvent, QTimer
 from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel,QIntValidator
 from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView, QApplication,QLabel,QWidget
+    QAbstractItemView, QTableView, QApplication,QLabel,QMenu
 from qgis.PyQt.uic import loadUi
 import json
 
@@ -48,7 +48,8 @@ class FiltreClicDroit(QObject):
 
     def eventFilter(self,obj,event):
         if event.type() == QEvent.MouseButtonPress and event.button() == RightButton:
-            self.class_parent.show_dlg_config_btn(obj)
+            # self.class_parent.show_dlg_config_btn(obj)
+            self.class_parent.context_menu(obj, event.globalPos())
             return True  # on consomme l’événement (empêche le clic normal).
 
         if event.type() == QEvent.MouseButtonPress and event.button() == LeftButton:
@@ -122,6 +123,18 @@ class JeuxAttributs:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+
+    # affichage d'un menu sur le clic droit
+    def context_menu(self, btn, global_pos):
+        menu = QMenu()
+        action_config = menu.addAction("Configurer")
+        action_suppr = menu.addAction("Supprimer")
+        action = menu.exec_(global_pos)
+        if action == action_config:
+            self.show_dlg_config_btn(btn)
+        elif action == action_suppr:
+            self.suppr_btn(btn.property("sstype"),btn.property("valeur")
+            )
 
     def init_fantome_btn(self, event, obj):
         pix = obj.grab().scaled(obj.width(), obj.height())
@@ -885,7 +898,6 @@ class JeuxAttributs:
         self.dlg_config_btn.pushButtonOk.clicked.connect(
             lambda: self.valide_config_btn(self.sstype_btn_sel, self.valeur_btn_sel))
         self.dlg_config_btn.pushButton_choix_autre_valeur.clicked.connect(self.choix_autre_valeur)
-        self.dlg_config_btn.pushButton_suppr_btn.clicked.connect(lambda : self.suppr_btn(self.sstype_btn_sel,self.valeur_btn_sel))
 
         self.inittableview_autre_valeur()
 
