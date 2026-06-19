@@ -629,40 +629,7 @@ class JeuxAttributs:
         self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(QTableView.SelectRows)
         self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(QTableView.SingleSelection)
 
-    def actualise_autre_val(self):
-        # champ — val des "autres"
-        sstype_autre = self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentText()
-        attr_coche_autre = self.get_attrs_coches(self.dlg_sel_champ_val_AUTRE)
 
-        # c'est le model qui gere les ajouts, donc on récupère le model associé a la tableview'
-        model = self.dlg_config_btn.tableView_autre_valeur.model()
-
-        # Suppression de toutes les lignes correspondant au sstype sélectionné
-        # avant d'ajouter la ligne en cours.
-        # Car on a droit qu'à une seule ligne de valeur
-        # Parcourir les lignes en sens inverse (pour éviter le décalage d'index)
-        for row in reversed(range(model.rowCount())):
-            index = model.index(row, 0)  # 0 = première colonne
-            valeur = model.data(index)
-            if valeur == sstype_autre:
-                model.removeRow(row)
-
-        # si aucune valeur cochée, on n'ajoute rien
-        if not attr_coche_autre:
-            return
-
-        # mise à jour du tableview avec la selection
-        model.appendRow([QStandardItem(sstype_autre), QStandardItem(attr_coche_autre[0])])
-
-        # sauvegarde dans le dico
-        for item in self.dico_layer_attrval.get(self.layer.name(), []):
-            # [0] car on ne prend que le premier de la liste vu qu'on peut avoir
-            # qu'une seule valeur par sous type
-            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
-                # Exemple : mise à jour de l'icône du bouton
-                item["autre_valeur"] = self.convert_tableview_to_dico()
-                break
-        self.save_json()
 
     # renvoie le contenu du tableview des sstype-valeur sous forme de dictionnaire
     def convert_tableview_to_dico(self):
@@ -679,7 +646,7 @@ class JeuxAttributs:
 
         return data_dict
 
-    def actualise_btn(self):
+    def ajout_btn(self):
         sstype = self.dlg_sel_champ_val.comboBoxchamps.currentText()
         valeurs = self.get_attrs_coches(self.dlg_sel_champ_val)
 
@@ -690,10 +657,9 @@ class JeuxAttributs:
             for i in range(self.dlg_sel_champ_val.listattributs.count()):
                 item = self.dlg_sel_champ_val.listattributs.item(i)
                 if item.flags() & Qt.ItemIsEditable:
-                    if item.text() ==TXT_SAISIR_VAL:
+                    if item.text() == TXT_SAISIR_VAL:
                         QMessageBox.warning(self.dlg_sel_champ_val,"Avertissement","veuillez saisir une valeur")
                         return
-                    print("textedit = ",item.text())
                     valeurs.append(item.text())
 
         # Initialise la clé avec une liste vide si absente
@@ -730,6 +696,55 @@ class JeuxAttributs:
         self.initLayout()
         self.load_json()
         self.ajout_btn_from_json()
+
+    def ajout_autre_val_to_json(self):
+        # champ — val des "autres"
+        sstype_autre = self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentText()
+        valeurs = self.get_attrs_coches(self.dlg_sel_champ_val_AUTRE)
+
+        # gestion des textedit : si le champ est de type textedit, on prend la valeur saisie
+        # CAS TEXTEDIT
+        if not valeurs:
+            valeurs = []
+            for i in range(self.dlg_sel_champ_val_AUTRE.listattributs.count()):
+                item = self.dlg_sel_champ_val_AUTRE.listattributs.item(i)
+                if item.flags() & Qt.ItemIsEditable:
+                    if item.text() == TXT_SAISIR_VAL:
+                        QMessageBox.warning(self.dlg_sel_champ_val_AUTRE, "Avertissement", "veuillez saisir une valeur")
+                        return
+                    valeurs.append(item.text())
+
+
+        # c'est le model qui gere les ajouts, donc on récupère le model associé a la tableview'
+        model = self.dlg_config_btn.tableView_autre_valeur.model()
+
+        # Suppression de toutes les lignes correspondant au sstype sélectionné
+        # avant d'ajouter la ligne en cours.
+        # Car on a droit qu'à une seule ligne de valeur
+        # Parcourir les lignes en sens inverse (pour éviter le décalage d'index)
+        for row in reversed(range(model.rowCount())):
+            index = model.index(row, 0)  # 0 = première colonne
+            valeur = model.data(index)
+            if valeur == sstype_autre:
+                model.removeRow(row)
+
+        # si aucune valeur cochée, on n'ajoute rien
+        if not valeurs:
+            return
+
+        # mise à jour du tableview avec la selection
+        # [0] car on ne prend que le premier de la liste vu qu'on peut avoir
+        model.appendRow([QStandardItem(sstype_autre), QStandardItem(valeurs[0])])
+
+        # sauvegarde dans le dico
+        for item in self.dico_layer_attrval.get(self.layer.name(), []):
+
+            # qu'une seule valeur par sous type
+            if item.get("sous_type") == self.sstype_btn_sel and item.get("valeur") == self.valeur_btn_sel:
+                # Exemple : mise à jour de l'icône du bouton
+                item["autre_valeur"] = self.convert_tableview_to_dico()
+                break
+        self.save_json()
 
     def save_json(self):
         if not self.layer:
@@ -883,12 +898,13 @@ class JeuxAttributs:
         loadUi(os.path.join(os.path.dirname(__file__), "conf_btn.ui"), self.dlg_config_btn)
 
         # connexion des slots : self.dlg_sel_champ_val
-        self.dlg_sel_champ_val.pushButtonOk.clicked.connect(self.actualise_btn)
+        self.dlg_sel_champ_val.pushButtonOk.clicked.connect(self.ajout_btn)
         self.dlg_sel_champ_val.comboBoxchamps.currentTextChanged.connect(
             lambda: self.change_champ(self.dlg_sel_champ_val))
+        # connexion des slots : self.dlg_sel_champ_AUTRE
         self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentTextChanged.connect(
             lambda: self.change_champ(self.dlg_sel_champ_val_AUTRE))
-        self.dlg_sel_champ_val_AUTRE.pushButtonOk.clicked.connect(self.actualise_autre_val)
+        self.dlg_sel_champ_val_AUTRE.pushButtonOk.clicked.connect(self.ajout_autre_val_to_json)
         self.dlg_sel_champ_val.pushButton_apropos.clicked.connect(self.on_apropos)
 
         # connexion des slots : self.dlg_config_btn
