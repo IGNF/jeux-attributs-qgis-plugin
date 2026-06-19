@@ -162,7 +162,7 @@ class JeuxAttributs:
         dlgAProposDe.exec()
 
     def affiche_doc(self):
-        webbrowser.open("https://a_definir")
+        webbrowser.open("https://ignf.github.io/jeux-attributs-qgis-plugin/")
 
     def show_dlg_config_btn(self,btn):
         self.clicked_button = btn
