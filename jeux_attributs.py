@@ -646,21 +646,24 @@ class JeuxAttributs:
 
         return data_dict
 
-    def ajout_btn(self):
-        sstype = self.dlg_sel_champ_val.comboBoxchamps.currentText()
-        valeurs = self.get_attrs_coches(self.dlg_sel_champ_val)
-
+    def get_valeur_selectionne(self,dlg):
+        valeurs = self.get_attrs_coches(dlg)
         # gestion des textedit : si le champ est de type textedit, on prend la valeur saisie
         # CAS TEXTEDIT
         if not valeurs:
             valeurs = []
-            for i in range(self.dlg_sel_champ_val.listattributs.count()):
-                item = self.dlg_sel_champ_val.listattributs.item(i)
+            for i in range(dlg.listattributs.count()):
+                item = dlg.listattributs.item(i)
                 if item.flags() & Qt.ItemIsEditable:
                     if item.text() == TXT_SAISIR_VAL:
-                        QMessageBox.warning(self.dlg_sel_champ_val,"Avertissement","veuillez saisir une valeur")
+                        QMessageBox.warning(dlg, "Avertissement", "veuillez saisir une valeur")
                         return
                     valeurs.append(item.text())
+        return valeurs
+
+    def ajout_btn(self):
+        sstype = self.dlg_sel_champ_val.comboBoxchamps.currentText()
+        valeurs = self.get_valeur_selectionne(self.dlg_sel_champ_val)
 
         # Initialise la clé avec une liste vide si absente
         self.dico_layer_attrval.setdefault(self.layer.name(), [])
@@ -700,20 +703,7 @@ class JeuxAttributs:
     def ajout_autre_val_to_json(self):
         # champ — val des "autres"
         sstype_autre = self.dlg_sel_champ_val_AUTRE.comboBoxchamps.currentText()
-        valeurs = self.get_attrs_coches(self.dlg_sel_champ_val_AUTRE)
-
-        # gestion des textedit : si le champ est de type textedit, on prend la valeur saisie
-        # CAS TEXTEDIT
-        if not valeurs:
-            valeurs = []
-            for i in range(self.dlg_sel_champ_val_AUTRE.listattributs.count()):
-                item = self.dlg_sel_champ_val_AUTRE.listattributs.item(i)
-                if item.flags() & Qt.ItemIsEditable:
-                    if item.text() == TXT_SAISIR_VAL:
-                        QMessageBox.warning(self.dlg_sel_champ_val_AUTRE, "Avertissement", "veuillez saisir une valeur")
-                        return
-                    valeurs.append(item.text())
-
+        valeurs = self.get_valeur_selectionne(self.dlg_sel_champ_val_AUTRE)
 
         # c'est le model qui gere les ajouts, donc on récupère le model associé a la tableview'
         model = self.dlg_config_btn.tableView_autre_valeur.model()
