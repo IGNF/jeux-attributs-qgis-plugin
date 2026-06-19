@@ -24,12 +24,13 @@
 import webbrowser
 
 from qgis.PyQt.QtCore import QObject, QEvent, QTimer
-from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
+from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel,QIntValidator
 from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView, QApplication,QLabel
+    QAbstractItemView, QTableView, QApplication,QLabel,QMenu
 from qgis.PyQt.uic import loadUi
 import json
 
+from .constantes import *
 from .mapping_version import *
 
 # Initialize Qt resources from file resources.py
@@ -47,7 +48,8 @@ class FiltreClicDroit(QObject):
 
     def eventFilter(self,obj,event):
         if event.type() == QEvent.MouseButtonPress and event.button() == RightButton:
-            self.class_parent.show_dlg_config_btn(obj)
+            # self.class_parent.show_dlg_config_btn(obj)
+            self.class_parent.context_menu(obj, event.globalPos())
             return True  # on consomme l’événement (empêche le clic normal).
 
         if event.type() == QEvent.MouseButtonPress and event.button() == LeftButton:
@@ -91,7 +93,6 @@ class JeuxAttributs:
                 """)
         self._ghost.hide()
 
-
         # choix de l'icône
         self.button_ok = None
         self.listview = None
@@ -122,6 +123,18 @@ class JeuxAttributs:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+
+    # affichage d'un menu sur le clic droit
+    def context_menu(self, btn, global_pos):
+        menu = QMenu()
+        action_config = menu.addAction("Configurer")
+        action_suppr = menu.addAction("Supprimer")
+        action = menu.exec_(global_pos)
+        if action == action_config:
+            self.show_dlg_config_btn(btn)
+        elif action == action_suppr:
+            self.suppr_btn(btn.property("sstype"),btn.property("valeur")
+            )
 
     def init_fantome_btn(self, event, obj):
         pix = obj.grab().scaled(obj.width(), obj.height())
@@ -219,6 +232,30 @@ class JeuxAttributs:
 
         self.dlg_config_btn.exec()
 
+    def suppr_btn(self,sstype,valeur):
+        # suppression dans le dictionnaire
+        if self.layer.name() in self.dico_layer_attrval:
+            self.dico_layer_attrval[self.layer.name()] = [
+                item for item in self.dico_layer_attrval[self.layer.name()]
+                if not (
+                        item.get("sous_type") == sstype and
+                        item.get("valeur") == valeur
+                )
+            ]
+        # sauvegarde json
+        self.save_json()
+        # fermeture de la fenêtre de configuration
+        self.dlg_config_btn.close()
+
+        # reconstruction complète de l'interface
+        self.clear_layout(self.layout_boutons)
+        self.liste_filtres = []
+
+        self.initLayout()
+        self.load_json()
+        self.ajout_btn_from_json()
+
+        self.dlg.adjustSize()
 
     def suppr_ligne_tableview(self):
         # recuperation de la selection
@@ -279,7 +316,6 @@ class JeuxAttributs:
             self.dlg_config_btn.labelAvertissement.setText("")
 
     def valide_config_btn(self,sstype,valeur):
-        # self.valide_nom_btn(sstype,valeur)
         self.valide_nom_et_icone(sstype, valeur)
 
         if self.dlg_config_btn.lineEditNomBtn.text() == "" and not self.pathiconbtnclicked:
@@ -301,12 +337,6 @@ class JeuxAttributs:
         self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
         self.dlg_sel_champ_val_AUTRE.exec()
 
-    # def valide_nom_btn(self,sstype,valeur):
-    #     for item in self.dico_layer_attrval.get(self.layer.name(), []):
-    #         if item.get("sous_type") == sstype and item.get("valeur") == valeur:
-    #             # mise à jour du nom du bouton
-    #             item["nom_btn"] = self.dlg_config_btn.lineEditNomBtn.text()
-    #             break
     def valide_nom_et_icone(self, sstype, valeur):
         for item in self.dico_layer_attrval.get(self.layer.name(), []):
             if item.get("sous_type") == sstype and item.get("valeur") == valeur:
@@ -392,7 +422,8 @@ class JeuxAttributs:
             index = self.layer.fields().indexOf(field.name())
             widget_type = self.get_type_champ(index)
             if widget_type == "ValueMap":
-                # self.dlg_selattributs.comboBoxchamps.addItem(field.name())4
+                dlg.comboBoxchamps.addItem(field.name())
+            elif widget_type == "TextEdit" and field.name() not in CHAMPS_IGNORE:
                 dlg.comboBoxchamps.addItem(field.name())
 
     # initialise toutes les valeurs en fonction du champ sélectionné
@@ -400,33 +431,35 @@ class JeuxAttributs:
         # pk faire ce test !!
         if champ == "":
             return
-
         list_sstype_val = self.get_sstype_valeur_from_dico(self.layer.name(),self.dico_layer_attrval)
-
         dlg.listattributs.clear()
-
         layer_field = self.layer.fields().field(champ)
         # Vérifier le type d’éditeur
         editor_setup = layer_field.editorWidgetSetup()
         valeurs_possibles = []
+
+        # CAS TEXTEDIT -> une seule entrée éditable
+        if editor_setup.type() == "TextEdit":
+            item = QListWidgetItem(TXT_SAISIR_VAL)
+            item.setFlags(item.flags() | ItemIsEditable | ItemIsEnabled | ItemIsSelectable)
+            dlg.listattributs.addItem(item)
+            return
+
+        # CAS NORMAL (ValueMap etc.)
         for v in editor_setup.config().values():
-            # cas de liste de dictionnaire → on dépile
             if isinstance(v, dict):
-                valeurs_possibles.extend(v.values())  # récupérer les vrais libellés
-            # cas où c'est une liste : cf troncon hydro
+                valeurs_possibles.extend(v.values())
             elif isinstance(v, list):
-                # Cas d’une liste → on ajoute chaque élément
                 for elem in v:
                     if isinstance(elem, dict):
-                        # Cas d’une liste de dictionnaires
                         valeurs_possibles.extend(elem.values())
                     else:
                         valeurs_possibles.append(elem)
-            else:
+            elif isinstance(v, (str, int, float)):
                 valeurs_possibles.append(v)
 
         for val in valeurs_possibles:
-            item = QListWidgetItem(val)
+            item = QListWidgetItem(str(val))
             item.setCheckState(Unchecked)
             if dlg == self.dlg_sel_champ_val:
                 if (champ,val) in list_sstype_val:
@@ -650,6 +683,19 @@ class JeuxAttributs:
         sstype = self.dlg_sel_champ_val.comboBoxchamps.currentText()
         valeurs = self.get_attrs_coches(self.dlg_sel_champ_val)
 
+        # gestion des textedit : si le champ est de type textedit, on prend la valeur saisie
+        # CAS TEXTEDIT
+        if not valeurs:
+            valeurs = []
+            for i in range(self.dlg_sel_champ_val.listattributs.count()):
+                item = self.dlg_sel_champ_val.listattributs.item(i)
+                if item.flags() & Qt.ItemIsEditable:
+                    if item.text() ==TXT_SAISIR_VAL:
+                        QMessageBox.warning(self.dlg_sel_champ_val,"Avertissement","veuillez saisir une valeur")
+                        return
+                    print("textedit = ",item.text())
+                    valeurs.append(item.text())
+
         # Initialise la clé avec une liste vide si absente
         self.dico_layer_attrval.setdefault(self.layer.name(), [])
         champ_attr_a_suppr = {(sstype, attr) for attr in self.get_attrs_coches(self.dlg_sel_champ_val, False)}
@@ -819,8 +865,11 @@ class JeuxAttributs:
         if self.first_start:
             self.first_start = False
 
+
+        if self.dlg is not None and self.dlg.isVisible():
+            return
         # libère références Python aux anciennes UI (si elles existent)
-        self.dlg = None
+
         self.dlg_sel_champ_val = None
         self.layout_boutons = None
         self.liste_filtres = []
@@ -849,7 +898,6 @@ class JeuxAttributs:
         self.dlg_config_btn.pushButtonOk.clicked.connect(
             lambda: self.valide_config_btn(self.sstype_btn_sel, self.valeur_btn_sel))
         self.dlg_config_btn.pushButton_choix_autre_valeur.clicked.connect(self.choix_autre_valeur)
-
 
         self.inittableview_autre_valeur()
 

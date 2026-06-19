@@ -12,7 +12,7 @@ style="width:1.38681in;height:1.47153in"
 alt="logo_IGN_pour_lettre" /></td>
 <td style="font-size: 24px;text-align: center;"><p><strong>Manuel utilisateur du plugin
 « Jeux d’attributs »</strong></p>
-<p><strong>V0.3.0</strong></p></td>
+<p><strong>V0.3.1</strong></p></td>
 </tr>
 <tr>
 <td style="font-size: 16px;text-align: center;">Développeur  : Gérôme PECHEUR (IGN)</td>
@@ -23,18 +23,17 @@ alt="logo_IGN_pour_lettre" /></td>
 ## Sommaire
 
 - [1. Prérequis](#prerequis)
-
 - [2. Résumé](#resume)
-
 - [3. Installation](#installation)
-
 - [4. Présentation](#presentation)
-
- - [5. Configuration](#configuration)
-
- - [6. Utilisation](#utilisation)
-
- - [7. A propos](#a-propos)
+- [5. Configuration](#configuration)
+	- [5.1 Configuration du bouton](#config_bouton)
+	- [5.2 Configuration des autres champs et personnalisation du bouton](#config_autres_champs)
+- [6. Utilisation](#utilisation)
+	- [6.1 Application des champs définis](#appli_new_champs)
+	- [6.2 Déplacement d'un bouton](#deplace_bouton)
+	- [6.3 Suppression d'un bouton](#suppr_bouton)
+- [7. A propos](#a-propos)
 
 
 
@@ -81,6 +80,10 @@ style="width:6.83889in;height:0.66111in" />
   <h2 id="configuration" style="color: white;margin:0;" >5. Configuration</h2>
 </div>
 
+<div  style="font-size: 10px;background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="config_bouton" style="color: white;margin:0;" >5.1 Configuration du bouton</h2>
+</div>
+
 <img src="images/image4.png"
 style="width:0.2292in;height:0.2292in" /> : Permet de configurer la
 valeur d’un champ à modifier sur les entités sélectionnées dans QGIS
@@ -98,12 +101,19 @@ La validation via <img src="images/image6.png"
 style="width:0.9804in;height:0.17633in" />, va ajouter des boutons pour
 chaque valeur dans l’interface.
 
-Il est possible d’y ajouter plusieurs valeurs pour un même champ.
-
 Après configuration on obtient :
 
 <img src="images/image3.png"
 style="width:6.83889in;height:0.66111in" />
+
+<div  style="font-size: 10px;background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="config_autres_champs" style="color: white;margin:0;" >5.2 Configuration des autres champs et personnalisation du bouton</h2>
+</div>
+
+accessible via clic droit -> "configurer"" sur un bouton : <img src="images/image14.png"/>
+
+Il est possible d’y ajouter plusieurs valeurs pour un même champ.
+
 
 Une fois cette étape effectuée, il est possible de modifier le nom d’un
 bouton, d’y ajouter une icône ou de lui associer d’autres attributs à
@@ -144,6 +154,18 @@ nécessaire.
   <h2 id="utilisation" style="color: white;margin:0;" >6. Utilisation</h2>
 </div>
 
+<div  style="font-size: 10px;background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="appli_new_champs" style="color: white;margin:0;" >6.1 Application des champs définis</h2>
+</div>
+
+Dans QGIS, après la sélection d’une ou de plusieurs entités, l’appui sur
+un bouton entraîne la modification sémantique correspondant à la
+configuration du bouton activé.
+
+<div  style="font-size: 10px;background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="deplace_bouton" style="color: white;margin:0;" >6.2 Déplacement d'un bouton</h2>
+</div>
+
 Il est possible de réorganiser l’ordre des boutons par simple
 glissé-déposé.
 
@@ -156,9 +178,11 @@ différents champs pris en compte.
 <img src="images/image11.png"
 style="width:3.19836in;height:1.26059in" />
 
-Dans QGIS, après la sélection d’une ou de plusieurs entités, l’appui sur
-un bouton entraîne la modification sémantique correspondant à la
-configuration du bouton activé.
+<div  style="font-size: 10px;background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
+  <h2 id="suppr_bouton" style="color: white;margin:0;" >6.3 Suppression d'un bouton</h2>
+</div>
+
+Il faut se placer sur le bouton à supprimer, puis faire un clic droit -> "Supprimer" : <img src="images/image14.png"/>
 
 
 <div  style="background-color: #00ADC5; border: 1px solid black; padding: 5px; text-align: justify;margin-bottom:10px;">
