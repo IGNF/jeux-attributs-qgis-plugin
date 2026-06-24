@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 import webbrowser
+from pathlib import Path
 
 from qgis.PyQt.QtCore import QObject, QEvent, QTimer
 from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel,QIntValidator
@@ -61,9 +62,18 @@ class FiltreClicDroit(QObject):
         if event.type() == QEvent.MouseMove:
             if getattr(self, "_press_pos", None):
                 if (event.globalPos() - self._press_pos).manhattanLength() > QApplication.startDragDistance():
-                    if isinstance(obj, QPushButton):
-                        self._dragging = True
+
+                    # detection du survol d'un bouton
+                    widget_sous_souris = QApplication.widgetAt(event.globalPos())
+                    self._dragging = True
+                    if isinstance(widget_sous_souris, QPushButton):
                         self.class_parent.init_fantome_btn(event,obj)
+                        self.class_parent._ghost_interdit.hide()
+
+                    else:
+                        self.class_parent.init_fantome_interdit(event)
+                        self.class_parent._ghost.hide()
+
 
         if event.type() == QEvent.MouseButtonRelease and event.button() == LeftButton:
             if getattr(self, "_dragging", False):
@@ -74,6 +84,7 @@ class FiltreClicDroit(QObject):
             self._press_pos = None
             self.widget_avant_move = None
             self.class_parent._ghost.hide()
+            self.class_parent._ghost_interdit.hide()
         return False
 
 class JeuxAttributs:
@@ -84,6 +95,8 @@ class JeuxAttributs:
         # =====================================================
         # image fantôme qui suit la souris lors du drag and drop des boutons
         self._ghost = QLabel(None)
+        # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
+        self._ghost.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self._ghost.setWindowFlags(ToolTip | FramelessWindowHint)
         self._ghost.setScaledContents(True)
         self._ghost.setStyleSheet("""
@@ -92,6 +105,24 @@ class JeuxAttributs:
                     padding: 1px;
                 """)
         self._ghost.hide()
+
+        # =============================================
+        # ghost interdit
+        self._ghost_interdit = QLabel(None)
+        # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
+        self._ghost_interdit.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self._ghost_interdit.setWindowFlags(ToolTip | FramelessWindowHint)
+        self._ghost_interdit.setScaledContents(True)
+        # self._ghost_interdit.setStyleSheet("""
+        #                     background-color: rgb(30, 144, 255);  /* bleu semi-transparent */
+        #
+        #                     padding: 1px;
+        #                 """)
+        self.path_ghost_interdit = Path(__file__).parent / "icons" / "ghost_interdit.PNG"
+        icon = QIcon(str(self.path_ghost_interdit))
+        pixmap = icon.pixmap(30, 30)
+        self._ghost_interdit.setPixmap(pixmap)
+        self._ghost_interdit.hide()
 
         # choix de l'icône
         self.button_ok = None
@@ -139,8 +170,12 @@ class JeuxAttributs:
     def init_fantome_btn(self, event, obj):
         pix = obj.grab().scaled(obj.width(), obj.height())
         self._ghost.setPixmap(pix)
-        self._ghost.move(event.globalPos() + QPoint(1, 1))
+        self._ghost.move(event.globalPos() - QPoint(int(pix.width()/2), int(pix.height()/2)))
         self._ghost.show()
+
+    def init_fantome_interdit(self, event):
+        self._ghost_interdit.move(event.globalPos() - QPoint(15, 15))
+        self._ghost_interdit.show()
 
     def relache_clic_gauche_btn(self, obj, obj_sous_mouse):
         pos_init = self.getposition_btn(obj)
