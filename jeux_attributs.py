@@ -62,7 +62,6 @@ class FiltreClicDroit(QObject):
         if event.type() == QEvent.MouseMove:
             if getattr(self, "_press_pos", None):
                 if (event.globalPos() - self._press_pos).manhattanLength() > QApplication.startDragDistance():
-
                     # detection du survol d'un bouton
                     widget_sous_souris = QApplication.widgetAt(event.globalPos())
                     self._dragging = True
