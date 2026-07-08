@@ -907,6 +907,10 @@ class JeuxAttributs:
             self.run()
 
     def on_dialog_closed(self):
+        try:
+            self.iface.layerTreeView().currentLayerChanged.disconnect(self.on_active_layer_changed)
+        except TypeError:
+            pass  # déjà déconnecté
         sauve_position_dial(self.dlg)
         self.dlg = None
 
