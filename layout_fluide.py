@@ -1,5 +1,6 @@
-from PyQt5.QtCore import Qt,QRect, QSize, QPoint
-from PyQt5.QtWidgets import QLayout, QSizePolicy, QWidgetItem, QLayoutItem
+from qgis.PyQt.QtCore import Qt,QRect, QSize, QPoint
+from qgis.PyQt.QtWidgets import QLayout
+from .mapping_version import *
 
 class LayoutFluide(QLayout):
     def __init__(self, parent=None, margin=0, spacing=0, largeur_max_ligne=1000):
@@ -30,7 +31,7 @@ class LayoutFluide(QLayout):
 
     def expandingDirections(self):
         # le layout s’étend dans les deux directions
-        return Qt.Orientations(Qt.Horizontal)
+        return Orientations(Horizontal)
 
     def hasHeightForWidth(self):
         return True

@@ -22,17 +22,19 @@
  ***************************************************************************/
 """
 import webbrowser
+import json
 from pathlib import Path
 
-from qgis.PyQt.QtCore import QObject, QEvent, QTimer
-from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel,QIntValidator
-from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, \
-    QAbstractItemView, QTableView, QApplication,QLabel,QMenu
+from qgis.PyQt.QtCore import QObject, QTimer
+from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
+from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, QLabel,QMenu
 from qgis.PyQt.uic import loadUi
-import json
 
-from .constantes import *
-from .mapping_version import *
+from qgis.core import QgsApplication
+
+from .window_manager import *
+print("MouseButtonPress =", MouseButtonPress)
+print(type(MouseButtonPress))
 
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
@@ -48,18 +50,18 @@ class FiltreClicDroit(QObject):
         self.class_parent = class_parent
 
     def eventFilter(self,obj,event):
-        if event.type() == QEvent.MouseButtonPress and event.button() == RightButton:
+        if event.type() == MouseButtonPress and event.button() == RightButton:
             # self.class_parent.show_dlg_config_btn(obj)
             self.class_parent.context_menu(obj, event.globalPos())
             return True  # on consomme l’événement (empêche le clic normal).
 
-        if event.type() == QEvent.MouseButtonPress and event.button() == LeftButton:
+        if event.type() == MouseButtonPress and event.button() == LeftButton:
             if isinstance(obj, QPushButton):
                 self._dragging = False
                 self.widget_avant_move = obj
                 self._press_pos = event.pos()
 
-        if event.type() == QEvent.MouseMove:
+        if event.type() == MouseMove:
             if getattr(self, "_press_pos", None):
                 if (event.globalPos() - self._press_pos).manhattanLength() > QApplication.startDragDistance():
                     # detection du survol d'un bouton
@@ -74,7 +76,7 @@ class FiltreClicDroit(QObject):
                         self.class_parent._ghost.hide()
 
 
-        if event.type() == QEvent.MouseButtonRelease and event.button() == LeftButton:
+        if event.type() == MouseButtonRelease and event.button() == LeftButton:
             if getattr(self, "_dragging", False):
                 widget_apres_move = QApplication.widgetAt(event.globalPos())
                 if isinstance(obj, QPushButton):
@@ -95,7 +97,7 @@ class JeuxAttributs:
         # image fantôme qui suit la souris lors du drag and drop des boutons
         self._ghost = QLabel(None)
         # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
-        self._ghost.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self._ghost.setAttribute(WA_TransparentForMouseEvents, True)
         self._ghost.setWindowFlags(ToolTip | FramelessWindowHint)
         self._ghost.setScaledContents(True)
         self._ghost.setStyleSheet("""
@@ -109,7 +111,7 @@ class JeuxAttributs:
         # ghost interdit
         self._ghost_interdit = QLabel(None)
         # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
-        self._ghost_interdit.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self._ghost_interdit.setAttribute(WA_TransparentForMouseEvents, True)
         self._ghost_interdit.setWindowFlags(ToolTip | FramelessWindowHint)
         self._ghost_interdit.setScaledContents(True)
         # self._ghost_interdit.setStyleSheet("""
@@ -657,11 +659,11 @@ class JeuxAttributs:
         model.setHorizontalHeaderLabels(["Sous type", "Valeur"])
         self.dlg_config_btn.tableView_autre_valeur.setModel(model)
         # tableview en lecture seule
-        self.dlg_config_btn.tableView_autre_valeur.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.dlg_config_btn.tableView_autre_valeur.setEditTriggers(NoEditTriggers)
 
         # selection de ligne entiere
-        self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(QTableView.SelectRows)
-        self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(QTableView.SingleSelection)
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(SelectRows)
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(SingleSelection)
 
 
 
@@ -688,7 +690,7 @@ class JeuxAttributs:
             valeurs = []
             for i in range(dlg.listattributs.count()):
                 item = dlg.listattributs.item(i)
-                if item.flags() & Qt.ItemIsEditable:
+                if item.flags() & ItemIsEditable:
                     if item.text() == TXT_SAISIR_VAL:
                         QMessageBox.warning(dlg, "Avertissement", "veuillez saisir une valeur")
                         return
@@ -888,13 +890,28 @@ class JeuxAttributs:
         self.ajout_btn_from_json()
 
     def initGui(self):
-        pass
+        self.iface.projectRead.connect(self.on_project_opened)
+        # événement fermeture de qgis
+        QgsApplication.instance().aboutToQuit.connect(self.fermeture_qgis)
 
     def unload(self):
         try:
             self.iface.layerTreeView().currentLayerChanged.disconnect(self.on_active_layer_changed)
         except TypeError:
             pass  # déjà déconnecté
+
+    def on_project_opened(self):
+        settings = QSettings(NativeFormat, UserScope, "IGN", TITRE)
+        visible = settings.value("visible", False, type=bool)
+        if visible:
+            self.run()
+
+    def on_dialog_closed(self):
+        sauve_position_dial(self.dlg)
+        self.dlg = None
+
+    def fermeture_qgis(self):
+        sauve_position_dial(self.dlg)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -946,6 +963,10 @@ class JeuxAttributs:
         self.dlg.setWindowTitle("Jeux d'attributs")
         self.dlg.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__),"icons" ,"icon_principal.png")))
         self.dlg.setWindowFlags(Window | WindowCloseButtonHint)
+
+        # connection de la fermeture du dialogue
+        self.dlg.finished.connect(self.on_dialog_closed)
+        restore_position_dial(self.dlg)
 
         self.layer = self.iface.activeLayer()
         self.layout_boutons = LayoutFluide(self.dlg)
