@@ -1,5 +1,5 @@
-from qgis.PyQt.QtWidgets import QMessageBox,QTextEdit,QSizePolicy,QDialog
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QMessageBox,QTextEdit,QSizePolicy,QDialog,QTableView,QAbstractItemView
+from qgis.PyQt.QtCore import Qt,QSettings,QEvent
 
 # QT6
 try :
@@ -45,10 +45,22 @@ try :
     ArrowCursor = Qt.CursorShape.ArrowCursor
     red = Qt.GlobalColor.red
     Horizontal = Qt.Orientation.Horizontal
+    NativeFormat = QSettings.Format.NativeFormat
+    UserScope = QSettings.Scope.UserScope
+    WA_TransparentForMouseEvents = Qt.WidgetAttribute.WA_TransparentForMouseEvents
+    SelectRows = QTableView.SelectionBehavior.SelectRows
+    SingleSelection = QTableView.SelectionMode.SingleSelection
+    NoEditTriggers = QAbstractItemView.EditTrigger.NoEditTriggers
+    MouseButtonPress = QEvent.Type.MouseButtonPress
+    MouseMove = QEvent.Type.MouseMove
+    MouseButtonRelease = QEvent.Type.MouseButtonRelease
+    Orientations = Qt.Orientation
+
+
 
 
 # QT5
-except :
+except AttributeError :
     Dialog = Qt.Dialog
     Window = Qt.Window
     ToolTip = Qt.ToolTip
@@ -91,3 +103,13 @@ except :
     ArrowCursor = Qt.ArrowCursor
     red = Qt.red
     Horizontal = Qt.Horizontal
+    NativeFormat = QSettings.NativeFormat
+    UserScope = QSettings.UserScope
+    WA_TransparentForMouseEvents = Qt.WA_TransparentForMouseEvents
+    SelectRows = QTableView.SelectRows
+    SingleSelection = QTableView.SingleSelection
+    NoEditTriggers = QAbstractItemView.NoEditTriggers
+    MouseButtonPress = QEvent.MouseButtonPress
+    MouseMove = QEvent.MouseMove
+    MouseButtonRelease = QEvent.MouseButtonRelease
+    Orientations = Qt.Orientations
