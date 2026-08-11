@@ -25,16 +25,16 @@ import webbrowser
 import json
 from pathlib import Path
 
-from qgis.PyQt.QtCore import QObject, QTimer
+from qgis.PyQt.QtCore import QObject, QTimer,QEvent
 from qgis.PyQt.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from qgis.PyQt.QtWidgets import  QListWidgetItem, QPushButton, QListView, QVBoxLayout, QLabel,QMenu
+from qgis.PyQt.QtWidgets import  (QListWidgetItem, QPushButton, QListView, QVBoxLayout, QLabel,QMenu,QDialog,
+                                  QAbstractItemView,QTableView,QMessageBox)
 from qgis.PyQt.uic import loadUi
 
 from qgis.core import QgsApplication
 
 from .window_manager import *
-print("MouseButtonPress =", MouseButtonPress)
-print(type(MouseButtonPress))
+
 
 # Initialize Qt resources from file resources.py
 # Import the code for the dialog
@@ -47,25 +47,39 @@ from .layout_fluide import *
 class FiltreClicDroit(QObject):
     def __init__(self, class_parent):
         super().__init__()
+        self.globalposition = None
         self.class_parent = class_parent
 
     def eventFilter(self,obj,event):
-        if event.type() == MouseButtonPress and event.button() == RightButton:
-            # self.class_parent.show_dlg_config_btn(obj)
-            self.class_parent.context_menu(obj, event.globalPos())
+        # On ne traite que les événements souris
+        if event.type() in (QEvent.Type.MouseButtonPress,QEvent.Type.MouseButtonRelease,QEvent.Type.MouseMove):
+            # position globale de la souris
+            if hasattr(event, "globalPosition"):  # Qt6
+                self.globalposition = event.globalPosition().toPoint()
+            else:  # Qt5
+                self.globalposition = event.globalPos()
+        else:
+            return False
+        if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
+            self.class_parent.context_menu(obj, self.globalposition)
+
             return True  # on consomme l’événement (empêche le clic normal).
 
-        if event.type() == MouseButtonPress and event.button() == LeftButton:
+        if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
             if isinstance(obj, QPushButton):
                 self._dragging = False
                 self.widget_avant_move = obj
-                self._press_pos = event.pos()
+                # self._press_pos = event.pos()
+                if hasattr(event, "globalPosition"):
+                    self._press_pos = event.globalPosition().toPoint()
+                else:
+                    self._press_pos = event.globalPos()
 
-        if event.type() == MouseMove:
+        if event.type() == QEvent.Type.MouseMove:
             if getattr(self, "_press_pos", None):
-                if (event.globalPos() - self._press_pos).manhattanLength() > QApplication.startDragDistance():
+                if (self.globalposition - self._press_pos).manhattanLength() > QApplication.startDragDistance():
                     # detection du survol d'un bouton
-                    widget_sous_souris = QApplication.widgetAt(event.globalPos())
+                    widget_sous_souris = QApplication.widgetAt(self.globalposition)
                     self._dragging = True
                     if isinstance(widget_sous_souris, QPushButton):
                         self.class_parent.init_fantome_btn(event,obj)
@@ -75,10 +89,9 @@ class FiltreClicDroit(QObject):
                         self.class_parent.init_fantome_interdit(event)
                         self.class_parent._ghost.hide()
 
-
-        if event.type() == MouseButtonRelease and event.button() == LeftButton:
+        if event.type() == QEvent.Type.MouseButtonRelease and event.button() == Qt.MouseButton.LeftButton:
             if getattr(self, "_dragging", False):
-                widget_apres_move = QApplication.widgetAt(event.globalPos())
+                widget_apres_move = QApplication.widgetAt(self.globalposition)
                 if isinstance(obj, QPushButton):
                     self.class_parent.relache_clic_gauche_btn(self.widget_avant_move, widget_apres_move)
             self._dragging = False
@@ -97,8 +110,8 @@ class JeuxAttributs:
         # image fantôme qui suit la souris lors du drag and drop des boutons
         self._ghost = QLabel(None)
         # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
-        self._ghost.setAttribute(WA_TransparentForMouseEvents, True)
-        self._ghost.setWindowFlags(ToolTip | FramelessWindowHint)
+        self._ghost.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._ghost.setWindowFlags(Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
         self._ghost.setScaledContents(True)
         self._ghost.setStyleSheet("""
                     background-color: rgb(30, 144, 255);  /* bleu semi-transparent */
@@ -111,8 +124,8 @@ class JeuxAttributs:
         # ghost interdit
         self._ghost_interdit = QLabel(None)
         # éviter de détecter le survol de la souris sur le qlabel fantôme, prendre que les btn en compte
-        self._ghost_interdit.setAttribute(WA_TransparentForMouseEvents, True)
-        self._ghost_interdit.setWindowFlags(ToolTip | FramelessWindowHint)
+        self._ghost_interdit.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._ghost_interdit.setWindowFlags(Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
         self._ghost_interdit.setScaledContents(True)
         # self._ghost_interdit.setStyleSheet("""
         #                     background-color: rgb(30, 144, 255);  /* bleu semi-transparent */
@@ -169,13 +182,21 @@ class JeuxAttributs:
             )
 
     def init_fantome_btn(self, event, obj):
+        if hasattr(event, "globalPosition"):
+            globalposition = event.globalPosition().toPoint()  # Qt6
+        else:
+            globalposition = event.globalPos()  # Qt5
         pix = obj.grab().scaled(obj.width(), obj.height())
         self._ghost.setPixmap(pix)
-        self._ghost.move(event.globalPos() - QPoint(int(pix.width()/2), int(pix.height()/2)))
+        self._ghost.move(globalposition - QPoint(int(pix.width() / 2), int(pix.height() / 2)))
         self._ghost.show()
 
     def init_fantome_interdit(self, event):
-        self._ghost_interdit.move(event.globalPos() - QPoint(15, 15))
+        if hasattr(event, "globalPosition"):
+            globalposition = event.globalPosition().toPoint()  # Qt6
+        else:
+            globalposition = event.globalPos()  # Qt5
+        self._ghost_interdit.move(globalposition - QPoint(15, 15))
         self._ghost_interdit.show()
 
     def relache_clic_gauche_btn(self, obj, obj_sous_mouse):
@@ -192,7 +213,7 @@ class JeuxAttributs:
     def on_apropos(self):
         dlgAProposDe = QDialog()
         loadUi(os.path.dirname(__file__) + "/aproposde.ui", dlgAProposDe)
-        dlgAProposDe.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        dlgAProposDe.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
         dlgAProposDe.setWindowTitle("A propos de...")
         dlgAProposDe.pushButtonAffichedoc.clicked.connect(self.affiche_doc)
         dlgAProposDe.exec()
@@ -207,7 +228,7 @@ class JeuxAttributs:
         self.valeur_btn_sel = btn.property("valeur")
 
         self.dlg_config_btn.setWindowTitle("Paramétrage des boutons et des actions associés")
-        self.dlg_config_btn.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        self.dlg_config_btn.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
         # le nom est récupéré à partir du tooltip
         # car si l'icône est renseigné le bouton perd son nom
         self.dlg_config_btn.lineEditNomBtn.setText(btn.text())
@@ -231,7 +252,7 @@ class JeuxAttributs:
         self.dlg_config_btn.lineEdit_icone.setText(icon_str)
         path = os.path.join(self.path_repicon_btn,icon_str)
         pixmap = QPixmap(path)
-        pixmap = pixmap.scaled(20, 20, KeepAspectRatio, SmoothTransformation)
+        pixmap = pixmap.scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
         # ***************AUTRE VALEUR*********************
@@ -248,8 +269,8 @@ class JeuxAttributs:
             model.appendRow([QStandardItem(sstype_autre), QStandardItem(valeur_autre)])
         self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(0, 150)
         self.dlg_config_btn.tableView_autre_valeur.setColumnWidth(1, 150)
-        model.setHeaderData(0, Horizontal, "Sous type")
-        model.setHeaderData(1, Horizontal, "Valeur")
+        model.setHeaderData(0, Qt.Orientation.Horizontal, "Sous type")
+        model.setHeaderData(1, Qt.Orientation.Horizontal, "Valeur")
 
         sstype_str = f"<span style='color: red'><b>{self.sstype_btn_sel}</b></span>"
         self.dlg_config_btn.label_ss_type.setText(sstype_str)
@@ -367,7 +388,7 @@ class JeuxAttributs:
         self.dlg_config_btn.close()
 
     def choix_autre_valeur(self):
-        self.dlg_sel_champ_val_AUTRE.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        self.dlg_sel_champ_val_AUTRE.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
         self.dlg_sel_champ_val_AUTRE.comboBoxchamps.clear()
         self.dlg_sel_champ_val_AUTRE.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val_AUTRE)
@@ -401,7 +422,7 @@ class JeuxAttributs:
 
         # on actualise l'icône à afficher apres le nom de l'icône
         pixmap = QPixmap(self.pathiconbtnclicked)
-        pixmap = pixmap.scaled(20, 20, KeepAspectRatio, SmoothTransformation)
+        pixmap = pixmap.scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.dlg_config_btn.label_icon_sel.setPixmap(pixmap)
 
     # on a choisi une icone
@@ -414,7 +435,7 @@ class JeuxAttributs:
         self.dlg_icon = QDialog()
         self.dlg_icon.setWindowTitle("Choisir une icône...")
         self.dlg_icon.setWindowIcon(QIcon(self.pathicon_interface))
-        self.dlg_icon.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        self.dlg_icon.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
         layout = QVBoxLayout()
         self.listview = QListView()
         self.button_ok = QPushButton("Valider")
@@ -477,7 +498,7 @@ class JeuxAttributs:
         # CAS TEXTEDIT -> une seule entrée éditable
         if editor_setup.type() == "TextEdit":
             item = QListWidgetItem(TXT_SAISIR_VAL)
-            item.setFlags(item.flags() | ItemIsEditable | ItemIsEnabled | ItemIsSelectable)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             dlg.listattributs.addItem(item)
             return
 
@@ -496,10 +517,10 @@ class JeuxAttributs:
 
         for val in valeurs_possibles:
             item = QListWidgetItem(str(val))
-            item.setCheckState(Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
             if dlg == self.dlg_sel_champ_val:
                 if (champ,val) in list_sstype_val:
-                    item.setCheckState(Checked)
+                    item.setCheckState(Qt.CheckState.Checked)
             dlg.listattributs.addItem(item)
             if dlg == self.dlg_sel_champ_val_AUTRE:
                 self.dlg_sel_champ_val_AUTRE.listattributs.itemChanged.connect(self.on_item_changed)
@@ -516,9 +537,9 @@ class JeuxAttributs:
     def get_attrs_coches(self,dlg,coche = True):
         val_coche = []
         if coche:
-            bcoche = Checked
+            bcoche = Qt.CheckState.Checked
         else:
-            bcoche = Unchecked
+            bcoche = Qt.CheckState.Unchecked
         for i in range(dlg.listattributs.count()):
             item = dlg.listattributs.item(i)
             if item.checkState() == bcoche:
@@ -529,7 +550,7 @@ class JeuxAttributs:
         self.dlg_sel_champ_val.comboBoxchamps.clear()
         self.dlg_sel_champ_val.listattributs.clear()
         self.init_combo_choix_champ(self.dlg_sel_champ_val)
-        self.dlg_sel_champ_val.setWindowFlags(WindowStaysOnTopHint | WindowCloseButtonHint)
+        self.dlg_sel_champ_val.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint)
         self.dlg_sel_champ_val.exec()
 
     def change_champ(self,dlg):
@@ -659,11 +680,11 @@ class JeuxAttributs:
         model.setHorizontalHeaderLabels(["Sous type", "Valeur"])
         self.dlg_config_btn.tableView_autre_valeur.setModel(model)
         # tableview en lecture seule
-        self.dlg_config_btn.tableView_autre_valeur.setEditTriggers(NoEditTriggers)
+        self.dlg_config_btn.tableView_autre_valeur.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # selection de ligne entiere
-        self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(SelectRows)
-        self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(SingleSelection)
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.dlg_config_btn.tableView_autre_valeur.setSelectionMode(QTableView.SelectionMode.SingleSelection)
 
 
 
@@ -690,7 +711,7 @@ class JeuxAttributs:
             valeurs = []
             for i in range(dlg.listattributs.count()):
                 item = dlg.listattributs.item(i)
-                if item.flags() & ItemIsEditable:
+                if item.flags() & Qt.ItemFlag.ItemIsEditable:
                     if item.text() == TXT_SAISIR_VAL:
                         QMessageBox.warning(dlg, "Avertissement", "veuillez saisir une valeur")
                         return
@@ -901,7 +922,7 @@ class JeuxAttributs:
             pass  # déjà déconnecté
 
     def on_project_opened(self):
-        settings = QSettings(NativeFormat, UserScope, "IGN", TITRE)
+        settings = QSettings(QSettings.Format.NativeFormat, QSettings.Scope.UserScope, "IGN", TITRE)
         visible = settings.value("visible", False, type=bool)
         if visible:
             self.run()
@@ -966,7 +987,7 @@ class JeuxAttributs:
         self.dlg = QDialog(self.iface.mainWindow())
         self.dlg.setWindowTitle("Jeux d'attributs")
         self.dlg.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__),"icons" ,"icon_principal.png")))
-        self.dlg.setWindowFlags(Window | WindowCloseButtonHint)
+        self.dlg.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowCloseButtonHint)
 
         # connection de la fermeture du dialogue
         self.dlg.finished.connect(self.on_dialog_closed)

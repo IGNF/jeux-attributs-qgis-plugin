@@ -7,8 +7,8 @@ name=IGN Jeux d'attributs
 qgisMinimumVersion=3.34
 qgisMaximumVersion=4.99
 
-description=Jeux d'attributs
-version=0.3.3
+description=This plugin provides assistance for editing attribute values across different fields.
+version=0.3.4
 author=Gérôme PECHEUR (IGN)
 email=gerome.pecheur@ign.fr
 license=GNU AGPL v3
