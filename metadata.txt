@@ -8,7 +8,7 @@ qgisMinimumVersion=3.34
 qgisMaximumVersion=4.99
 
 description=This plugin provides assistance for editing attribute values across different fields.
-version=0.3.4
+version=1.0.0
 author=Gérôme PECHEUR (IGN)
 email=gerome.pecheur@ign.fr
 license=GNU AGPL v3

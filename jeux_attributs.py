@@ -174,7 +174,7 @@ class JeuxAttributs:
         menu = QMenu()
         action_config = menu.addAction("Configurer")
         action_suppr = menu.addAction("Supprimer")
-        action = menu.exec_(global_pos)
+        action = menu.exec(global_pos)
         if action == action_config:
             self.show_dlg_config_btn(btn)
         elif action == action_suppr:
@@ -527,12 +527,13 @@ class JeuxAttributs:
 
     def on_item_changed(self, changed_item):
         """Empêche d'avoir plusieurs cases cochées."""
-        if changed_item.checkState():
+        if changed_item.checkState() == Qt.CheckState.Checked:
             # Décoche toutes les autres
             for i in range(self.dlg_sel_champ_val_AUTRE.listattributs.count()):
                 item = self.dlg_sel_champ_val_AUTRE.listattributs.item(i)
-                if item is not changed_item and item.checkState():
-                    item.setCheckState(0)
+                if (item is not changed_item
+                        and item.checkState() == Qt.CheckState.Checked):
+                    item.setCheckState(Qt.CheckState.Unchecked)
 
     def get_attrs_coches(self,dlg,coche = True):
         val_coche = []
