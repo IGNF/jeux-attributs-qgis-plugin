@@ -1,4 +1,4 @@
-from qgis.PyQt.QtCore import QPoint, QSize,QSettings
+from qgis.PyQt.QtCore import QPoint,QSettings
 from qgis.PyQt.QtWidgets import QApplication
 from .constantes import *
 
